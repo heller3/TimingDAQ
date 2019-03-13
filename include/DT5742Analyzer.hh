@@ -20,6 +20,7 @@ class DT5742Analyzer : public DatAnalyzer {
         double chi2;
         int trigger;
         int runNumber;
+        int nPlanes;
         Long64_t timestamp;
     };
 

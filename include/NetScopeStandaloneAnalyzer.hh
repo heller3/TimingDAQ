@@ -5,15 +5,28 @@
 #define NetScope_SAMPLES 1000
 #define NetScope_F_SAMPLES 0
 #define SCOPE_MEM_LENGTH_MAX 12500000
-
+ 
 #include "DatAnalyzer.hh"
 #include <assert.h>
+
 
 // This is the class that should be used for parsing and analyzing
 // NetScope data files in .root format produced by the python script.
 
 class NetScopeStandaloneAnalyzer : public DatAnalyzer {
   public:
+	  struct FTBFPixelEvent {
+	      double xSlope;
+	      double ySlope;
+	      double xIntercept;
+	      double yIntercept;
+	      double chi2;
+	      int trigger;
+	      int runNumber;
+	      int nPlanes;
+	      Long64_t timestamp;
+	  };
+
     //Scope Tektronix DPO7254 ADC already in account in the binary conversion
     NetScopeStandaloneAnalyzer() : DatAnalyzer(NetScope_CHANNELS, NetScope_TIMES, NetScope_SAMPLES, 1, 1., NetScope_F_SAMPLES) {}
 
@@ -24,8 +37,30 @@ class NetScopeStandaloneAnalyzer : public DatAnalyzer {
     int GetChannelsMeasurement(int i_aux);
 
     unsigned int GetTimeIndex(unsigned int n_ch) { return 0; }
+
+    void Analyze();
+    
   protected:
     vector<int> active_ch = {0,1,2,3};
+    // Set by command line arguments or default
+    TString pixel_input_file_path;
+
+    // Pixel events variables
+    FTBFPixelEvent* pixel_event;
+    TFile *pixel_file = nullptr;
+    TTree *pixel_tree = nullptr;
+
+    unsigned long int idx_px_tree = 0;
+    unsigned long int entries_px_tree = 0;
+
+    float xIntercept;
+    float yIntercept;
+    float xSlope;
+    float ySlope;
+    vector<float> x_DUT;
+    vector<float> y_DUT;
+    float chi2;
+    int ntracks;
 };
 
 #endif
