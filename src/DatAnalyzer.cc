@@ -78,7 +78,6 @@ void DatAnalyzer::Analyze(){
     // Get the attenuation/amplification scale factor and convert ADC counts to mV
     //float scale_factor = (30.0 * DAC_SCALE / (float)DAC_RESOLUTION) * config->getChannelMultiplicationFactor(i);
     float scale_factor = (1000.0 * DAC_SCALE / (float)DAC_RESOLUTION) * config->getChannelMultiplicationFactor(i);
-
     //cout << "check : " << scale_factor << " = " << DAC_SCALE << " " << DAC_RESOLUTION << " " << config->getChannelMultiplicationFactor(i) << "\n";
 
     // ------- Get baseline ------
@@ -98,8 +97,9 @@ void DatAnalyzer::Analyze(){
       j++;
     }
     unsigned int bl_lenght = j - bl_st_idx;
-    baseline /= (float) bl_lenght;
+    if(bl_lenght <=1) cout << "WARNING: Baseline window is trivially short, probably configured incorrectly"<<endl;
 
+    baseline /= (float) bl_lenght;
     if (config->channels[i].v_baseline.size() < 200) {
       config->channels[i].v_baseline.push_back(baseline);
     }
@@ -116,7 +116,6 @@ void DatAnalyzer::Analyze(){
         config->channels[i].v_baseline.push_back(baseline);
       }
     }
-
     var["baseline"][i] = scale_factor * baseline;
 
     // ------------- Get minimum position, max amplitude and scale the signal
@@ -151,7 +150,6 @@ void DatAnalyzer::Analyze(){
     baseline_RMS = sqrt(baseline_RMS/bl_lenght);
     var["baseline_RMS"][i] = baseline_RMS;
 
-
     // --------------- Define pulse graph
     float * yerr = new float[NUM_SAMPLES];
     for(unsigned j = 0; j < NUM_SAMPLES; j++) yerr[j] = 0 * var["baseline_RMS"][i];
@@ -165,7 +163,6 @@ void DatAnalyzer::Analyze(){
     vector<float*> coeff_poly_fit;
     vector<pair<int, int>> poly_bounds;
     float Re_b, Re_slope;
-
     bool fittable = true;
     fittable *= idx_min < (int)(NUM_SAMPLES*0.8);
     fittable *= fabs(amp) > 8 * baseline_RMS;
@@ -829,6 +826,7 @@ void DatAnalyzer::RunEventsLoop() {
           cout << "Processing Event " << i_evt << "\n";
         }
       	// if (i_evt % 100 == 0) cout << "Processing Event " << i_evt << "\n";
+       
         int corruption = GetChannelsMeasurement();
         if (corruption == 1) {
           cout << "\tAnomaly detected at event " << i_evt << endl;
@@ -848,13 +846,11 @@ void DatAnalyzer::RunEventsLoop() {
     else if ( tree_in != NULL )
     {
       int n_evt_tree = tree_in->GetEntries();
-      //std::cout << "NNNN: " << n_evt_tree << std::endl;
+      std::cout << "NNNN: " << n_evt_tree << std::endl;
       for(int i_aux = start_evt; i_aux < n_evt_tree && (N_evts==0 || i_aux<N_evts); i_aux++){
-        if (i_aux % 100 == 0) cout << "Processing Event " << i_aux << "\n";
-
+        if (i_aux % 500 == 0) cout << "Processing Event " << i_aux << "\n";
         GetChannelsMeasurement( i_aux );
         Analyze();
-
         N_written_evts++;
         tree->Fill();
         if(N_written_evts%evt_progress_print_rate == 0) {
