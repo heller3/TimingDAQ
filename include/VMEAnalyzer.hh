@@ -20,6 +20,7 @@ class VMEAnalyzer : public DatAnalyzer {
         double chi2;
         int trigger;
         int runNumber;
+        int nPlanes;
         Long64_t timestamp;
     };
 
@@ -79,6 +80,7 @@ class VMEAnalyzer : public DatAnalyzer {
     vector<float> y_DUT;
     float chi2;
     int ntracks;
+    int nplanes;
 
 };
 

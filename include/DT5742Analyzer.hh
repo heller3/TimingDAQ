@@ -83,6 +83,7 @@ class DT5742Analyzer : public DatAnalyzer {
     vector<float> y_DUT;
     float chi2;
     int ntracks;
+    int nplanes;
 
 };
 

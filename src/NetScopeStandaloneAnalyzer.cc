@@ -50,6 +50,7 @@ void NetScopeStandaloneAnalyzer::InitLoop(){
     }
     tree->Branch("chi2", &chi2, "chi2/F");
     tree->Branch("ntracks", &ntracks, "ntracks/I");
+    tree->Branch("nplanes", &nplanes, "nplanes/I");
     if (verbose) { cout << "   -->All pixel variables" << endl; }
     cout<<"Trying to get first entry"<<endl;
     pixel_tree->GetEntry(0);
@@ -97,6 +98,7 @@ void NetScopeStandaloneAnalyzer::Analyze(){
     }
     chi2 = -999.;
     ntracks = 0;
+    nplanes = 0;
 
     while (idx_px_tree < entries_px_tree && i_evt >= (pixel_event->trigger+0)) {
       pixel_tree->GetEntry(idx_px_tree);
@@ -111,6 +113,7 @@ void NetScopeStandaloneAnalyzer::Analyze(){
             y_DUT[i] = yIntercept + ySlope*(config->z_DUT[i]);
           }
           chi2 = pixel_event->chi2;
+          nplanes = pixel_event->nPlanes;
         }
       	ntracks++;
         idx_px_tree++;

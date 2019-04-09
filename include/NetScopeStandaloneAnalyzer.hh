@@ -61,6 +61,7 @@ class NetScopeStandaloneAnalyzer : public DatAnalyzer {
     vector<float> y_DUT;
     float chi2;
     int ntracks;
+    int nplanes;
 };
 
 #endif
