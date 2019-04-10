@@ -832,9 +832,8 @@ void DatAnalyzer::RunEventsLoop() {
       for( i_evt = 0; !feof(bin_file) && (N_evts==0 || i_evt<N_evts); i_evt++){
         if ((i_evt % 100 == 0 && std::time(0) - last_displaced_time > 5) || i_evt == 0) {
           last_displaced_time = std::time(0);
-          //cout << "Processing Event " << i_evt << "\n";
         }
-	if (i_evt % 1 == 0) cout << "Processing Event " << i_evt << "\n";
+	if (i_evt % 1 == 0) cerr << "Processing Event " << i_evt << "\n";
        
         int corruption = GetChannelsMeasurement();
         if (corruption == 1) {
