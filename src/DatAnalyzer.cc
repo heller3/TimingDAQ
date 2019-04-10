@@ -76,15 +76,12 @@ void DatAnalyzer::Analyze(){
     }
     TString name = Form("pulse_event%d_ch%d", i_evt, i);
     // Get the attenuation/amplification scale factor and convert ADC counts to mV
-    //float scale_factor = (30.0 * DAC_SCALE / (float)DAC_RESOLUTION) * config->getChannelMultiplicationFactor(i);
     float scale_factor = (1000.0 * DAC_SCALE / (float)DAC_RESOLUTION) * config->getChannelMultiplicationFactor(i);
-    //cout << "check : " << scale_factor << " = " << DAC_SCALE << " " << DAC_RESOLUTION << " " << config->getChannelMultiplicationFactor(i) << "\n";
-
+ 
     // ------- Get baseline ------
     float baseline = 0;
     float bl_start_time = config->channels[i].baseline_time[0];
     unsigned int bl_st_idx = -1;
-
     float bl_stop_time = config->channels[i].baseline_time[1];
 
     unsigned int j = 0;
@@ -96,21 +93,28 @@ void DatAnalyzer::Analyze(){
       }
       j++;
     }
-    unsigned int bl_lenght = j - bl_st_idx;
-    if(bl_lenght <=1) cout << "WARNING: Baseline window is trivially short, probably configured incorrectly"<<endl;
+    unsigned int bl_length = j - bl_st_idx;
+    if(bl_length <=1) cout << "WARNING: Baseline window is trivially short, probably configured incorrectly"<<endl;
+    baseline /= (float) bl_length;
 
-    baseline /= (float) bl_lenght;
     if (config->channels[i].v_baseline.size() < 200) {
       config->channels[i].v_baseline.push_back(baseline);
     }
-    else {
+    else {         
       float mean = TMath::Mean(config->channels[i].v_baseline.size(), &(config->channels[i].v_baseline[0]));
       float rms = TMath::RMS(config->channels[i].v_baseline.size(), &(config->channels[i].v_baseline[0]));
 
-      if (fabs(mean - baseline)/rms > 10) {
-        // cout << rms << endl;
-        // cout << i_evt << "\tBaseline " << baseline << " (" << i << ") forced to average " << mean << endl;
-        baseline = mean;
+      if (fabs(mean - baseline)/rms > 10) {	
+	  cout << "\n*********************************************************\n";
+	  cout <<   "******                   Warning           **************\n";
+	  cout << "Event : " << i_evt << "\t Baseline for channel " << i << " was observed to be " << baseline << " and is more than 10 standard deviations away from the average ( " << mean << " ). " << endl;
+	  cout <<   "*********************************************************\n";
+	  cout << "\n";		
+
+	  //sixie: don't do this correction because it can cause subsequent algorithms to
+	  //       segfault. ideally should fix the algorithm, but for now just don't do
+	  //       the correction
+	  //baseline = mean;
       }
       else if (config->channels[i].v_baseline.size() < 800){
         config->channels[i].v_baseline.push_back(baseline);
@@ -123,8 +127,7 @@ void DatAnalyzer::Analyze(){
     float amp = 0;
     for(unsigned int j=0; j<NUM_SAMPLES; j++) {
       channel[i][j] = scale_factor * (channel[i][j] - baseline);//baseline subtraction
-      //channel[i][j] = scale_factor * channel[i][j];//no baseline subtraction
-      bool range_check = j>bl_st_idx+bl_lenght && j<(int)(0.9*NUM_SAMPLES);
+      bool range_check = j>bl_st_idx+bl_length && j<(int)(0.9*NUM_SAMPLES);
       bool max_check = true;
       if ( config->channels[i].counter_auto_pol_switch >= 0 ) {
         max_check = fabs(channel[i][j]) > fabs(amp);
@@ -133,21 +136,27 @@ void DatAnalyzer::Analyze(){
         max_check = channel[i][j] < amp;
       }
 
-      if(( range_check && max_check) || j == bl_st_idx+bl_lenght) {
-      // if(( j>bl_st_idx+bl_lenght && j<(int)(0.9*NUM_SAMPLES) && fabs(channel[i][j]) > fabs(amp)) || j == bl_st_idx+bl_lenght) {
+      if(( range_check && max_check) || j == bl_st_idx+bl_length) {
+      // if(( j>bl_st_idx+bl_length && j<(int)(0.9*NUM_SAMPLES) && fabs(channel[i][j]) > fabs(amp)) || j == bl_st_idx+bl_length) {
         idx_min = j;
         amp = channel[i][j];
       }
     }
+
+    //************************************************************************************
+    //If the minimum point is the first sample, then the channel is bad, and we skip it.
+    //************************************************************************************
+    if (idx_min == 0) continue;
+
     var["t_peak"][i] = time[GetTimeIndex(i)][idx_min];
     var["amp"][i] = -amp;
 
     float baseline_RMS = 0;
     var["noise"][i] = channel[i][bl_st_idx+5];
-    for(unsigned int j=bl_st_idx; j<=(bl_st_idx+bl_lenght); j++) {
+    for(unsigned int j=bl_st_idx; j<=(bl_st_idx+bl_length); j++) {
       baseline_RMS += channel[i][j]*channel[i][j];
     }
-    baseline_RMS = sqrt(baseline_RMS/bl_lenght);
+    baseline_RMS = sqrt(baseline_RMS/bl_length);
     var["baseline_RMS"][i] = baseline_RMS;
 
     // --------------- Define pulse graph
@@ -604,7 +613,7 @@ void DatAnalyzer::Analyze(){
       line->SetLineStyle(7);
       line->DrawLine(time[GetTimeIndex(i)][0], 0, time[GetTimeIndex(i)][NUM_SAMPLES-1], 0);
       line->SetLineStyle(1);
-      line->DrawLine(time[GetTimeIndex(i)][bl_st_idx], 0, time[GetTimeIndex(i)][bl_st_idx+bl_lenght], 0);
+      line->DrawLine(time[GetTimeIndex(i)][bl_st_idx], 0, time[GetTimeIndex(i)][bl_st_idx+bl_length], 0);
       line->SetLineColor(47);
       line->DrawLine(time[GetTimeIndex(i)][0], var["baseline_RMS"][i], time[GetTimeIndex(i)][NUM_SAMPLES-1], var["baseline_RMS"][i]);
       line->DrawLine(time[GetTimeIndex(i)][0], -var["baseline_RMS"][i], time[GetTimeIndex(i)][NUM_SAMPLES-1], -var["baseline_RMS"][i]);
@@ -823,23 +832,23 @@ void DatAnalyzer::RunEventsLoop() {
       for( i_evt = 0; !feof(bin_file) && (N_evts==0 || i_evt<N_evts); i_evt++){
         if ((i_evt % 100 == 0 && std::time(0) - last_displaced_time > 5) || i_evt == 0) {
           last_displaced_time = std::time(0);
-          cout << "Processing Event " << i_evt << "\n";
+          //cout << "Processing Event " << i_evt << "\n";
         }
-      	// if (i_evt % 100 == 0) cout << "Processing Event " << i_evt << "\n";
+	if (i_evt % 1 == 0) cout << "Processing Event " << i_evt << "\n";
        
         int corruption = GetChannelsMeasurement();
         if (corruption == 1) {
           cout << "\tAnomaly detected at event " << i_evt << endl;
         }
-        else if( i_evt >= start_evt && corruption == 0) {
+        else if( i_evt >= start_evt && corruption == 0 ) {
           Analyze();
           N_written_evts++;
           tree->Fill();
         }
         else {
-          cout << i_evt << endl;
-          cout << "Manual break (" << corruption << ")" << endl;
-          break;
+          // cout << i_evt << endl;
+          // cout << "Manual break (" << corruption << ")" << endl;
+          // break;
         }
       }
     }
