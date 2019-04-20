@@ -3,9 +3,6 @@
 #define DEFAULT_FOR_EMPTY_CH 0
 #define THR_OVER_NOISE 3
 
-#define FIRST_SINCH 1
-#define LAST_SINCH 6
-
 using namespace std;
 
 DatAnalyzer::DatAnalyzer(int numChannels, int numTimes, int numSamples, int res, float scale, int numFsamples) :
@@ -100,15 +97,23 @@ void DatAnalyzer::Analyze(){
     if(bl_length <=1) cout << "WARNING: Baseline window is trivially short, probably configured incorrectly"<<endl;
     baseline /= (float) bl_length;
     TF1* f = nullptr;
-    if(i>=FIRST_SINCH && i<=LAST_SINCH) {
+    if(config->channels[i].algorithm.Contains("HNR")) {
       // Perform a sin fit for the baseline
       auto gr_bl = TGraph(bl_length, &(time[GetTimeIndex(i)][bl_st_idx]), &(channel[i][bl_st_idx]));
       f = new TF1("f_bl", "[0]+[1]*sin([2]+[3]*x)");
       f->SetParameter(0, baseline);
-      f->SetParameter(1, 30./scale_factor);
+      f->SetParameter(1, 40./scale_factor);
       f->SetParameter(2, 1.);
-      f->SetParameter(3, 2*TMath::Pi()/30.);
+      f->SetParameter(3, 2*TMath::Pi()/75.);
+      f->SetParNames("const", "A", "phi0", "omega");
       auto r = gr_bl.Fit(f, "SQN");
+      if (draw_debug_pulses) {
+        cout << "Harmonic Noise Removal:\n";
+        cout << Form("const = %.2f\n", f->GetParameter(0)*scale_factor);
+        cout << Form("A = %.2f\n", f->GetParameter(1)*scale_factor);
+        cout << Form("phi_0 = %.2f\n", f->GetParameter(2));
+        cout << Form("T = %.2f\n", 2*TMath::Pi()/f->GetParameter(3));
+      }
 
       baseline = f->GetParameter(0);
     }
@@ -142,7 +147,7 @@ void DatAnalyzer::Analyze(){
     unsigned int idx_min = 0;
     float amp = 0;
     for(unsigned int j=0; j<NUM_SAMPLES; j++) {
-      if(i>=FIRST_SINCH && i<=LAST_SINCH) {
+      if(config->channels[i].algorithm.Contains("HNR")) {
         channel[i][j] = scale_factor * (channel[i][j] - f->Eval(time[GetTimeIndex(i)][j]));//baseline subtraction
       }
       else channel[i][j] = scale_factor * (channel[i][j] - baseline);//baseline subtraction
@@ -162,7 +167,7 @@ void DatAnalyzer::Analyze(){
       }
     }
 
-    if(i>=FIRST_SINCH && i<=LAST_SINCH) {delete f;}
+    if(config->channels[i].algorithm.Contains("HNR")) {delete f;}
 
     //************************************************************************************
     //If the minimum point is the first sample, then the channel is bad, and we skip it.
