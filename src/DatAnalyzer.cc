@@ -100,7 +100,7 @@ void DatAnalyzer::Analyze(){
     if(bl_length <=1) cout << "WARNING: Baseline window is trivially short, probably configured incorrectly"<<endl;
     baseline /= (float) bl_length;
     TF1* f = nullptr;
-    if(i>=FIRST_SINCH || i<=LAST_SINCH) {
+    if(i>=FIRST_SINCH && i<=LAST_SINCH) {
       // Perform a sin fit for the baseline
       auto gr_bl = TGraph(bl_length, &(time[GetTimeIndex(i)][bl_st_idx]), &(channel[i][bl_st_idx]));
       f = new TF1("f_bl", "[0]+[1]*sin([2]+[3]*x)");
@@ -142,7 +142,7 @@ void DatAnalyzer::Analyze(){
     unsigned int idx_min = 0;
     float amp = 0;
     for(unsigned int j=0; j<NUM_SAMPLES; j++) {
-      if(i>=FIRST_SINCH || i<=LAST_SINCH) {
+      if(i>=FIRST_SINCH && i<=LAST_SINCH) {
         channel[i][j] = scale_factor * (channel[i][j] - f->Eval(time[GetTimeIndex(i)][j]));//baseline subtraction
       }
       else channel[i][j] = scale_factor * (channel[i][j] - baseline);//baseline subtraction
@@ -162,7 +162,7 @@ void DatAnalyzer::Analyze(){
       }
     }
 
-    if(i>=FIRST_SINCH || i<=LAST_SINCH) {delete f;}
+    if(i>=FIRST_SINCH && i<=LAST_SINCH) {delete f;}
 
     //************************************************************************************
     //If the minimum point is the first sample, then the channel is bad, and we skip it.
@@ -854,7 +854,7 @@ void DatAnalyzer::RunEventsLoop() {
         if ((i_evt % 100 == 0 && std::time(0) - last_displaced_time > 5) || i_evt == 0) {
           last_displaced_time = std::time(0);
         }
-	if (i_evt % 1 == 0) cerr << "Processing Event " << i_evt << "\n";
+      	if (i_evt % 100 == 0) cerr << "Processing Event " << i_evt << "\n";
 
         int corruption = GetChannelsMeasurement();
         if (corruption == 1) {
