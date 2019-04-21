@@ -11,7 +11,7 @@ def GetCommandLineArgs():
     p.add_argument('--vNetScope', default=None, help='Version of the config. Something like vXX (v1, vf1, ...) and has to have a corresponded config file in the config directory (config/config_dir/NetScope_vXX.config).\n If not given no NetScope is run.')
 
     p.add_argument('--code_dir', default=os.environ['PWD'])
-    p.add_argument('--config_dir', default='FNAL_TestBeam_1811/')
+    p.add_argument('--config_dir', default='FNAL_TestBeam_1904/')
 
     p.add_argument('--no_NimPlus', action='store_true', default=False)
     p.add_argument('--NimPlus_flag', type=str, default='muxout-D')
@@ -49,7 +49,7 @@ if __name__ == '__main__':
     if not args.vVME == None:
         print 'Processing VME'
 
-        output_dir = data_dir + 'VME/RECO/' + args.vVME
+        output_dir = data_dir + 'VME/RecoData/RecoWithTracks/' + args.vVME
         if not os.path.isdir(output_dir):
             print 'Creating the output directory ', output_dir
             os.mkdir(output_dir)
@@ -68,7 +68,7 @@ if __name__ == '__main__':
                 else:
                     print '[WARNING] No NimPlus file present: ' + NimPlus_file
 
-            raw_filename = data_dir + 'VME/RAW/RawDataVMETiming_Run{}.dat'.format(run)
+            raw_filename = data_dir + 'VME/RawData/RawDataSaver0CMSVMETiming_Run{}_0_Raw.dat'.format(run)
             if not os.path.exists(raw_filename):
                 if args.verbose:
                     print 'Creating the VME file: ', raw_filename
@@ -109,7 +109,7 @@ if __name__ == '__main__':
             if not args.NO_save_meas:
                 cmd_Dat2Root += ' --save_meas'
             if not args.no_tracks:
-                tracks_filename = data_dir + 'Tracks/Run{}_CMSTiming_converted.root'.format(run)
+                tracks_filename = data_dir + 'Tracks/Run{}_CMSTiming_SlowTriggerStream_converted.root'.format(run)
 
                 if os.path.exists(tracks_filename):
                     cmd_Dat2Root += ' --pixel_input_file=' + tracks_filename
@@ -136,6 +136,7 @@ if __name__ == '__main__':
                 if args.verbose:
                     print '\n'+cmd_Dat2Root
                 subprocess.call(cmd_Dat2Root, shell=True)
+                # print cmd_Dat2Root
             else:
                 print 'Dividing the run into', evt_start_list.shape[0], 'jobs'
                 outfile_list = []

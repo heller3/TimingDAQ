@@ -77,7 +77,7 @@ void DatAnalyzer::Analyze(){
     TString name = Form("pulse_event%d_ch%d", i_evt, i);
     // Get the attenuation/amplification scale factor and convert ADC counts to mV
     float scale_factor = (1000.0 * DAC_SCALE / (float)DAC_RESOLUTION) * config->getChannelMultiplicationFactor(i);
- 
+
     // ------- Get baseline ------
     float baseline = 0;
     float bl_start_time = config->channels[i].baseline_time[0];
@@ -96,20 +96,41 @@ void DatAnalyzer::Analyze(){
     unsigned int bl_length = j - bl_st_idx;
     if(bl_length <=1) cout << "WARNING: Baseline window is trivially short, probably configured incorrectly"<<endl;
     baseline /= (float) bl_length;
+    TF1* f = nullptr;
+    if(config->channels[i].algorithm.Contains("HNR")) {
+      // Perform a sin fit for the baseline
+      auto gr_bl = TGraph(bl_length, &(time[GetTimeIndex(i)][bl_st_idx]), &(channel[i][bl_st_idx]));
+      f = new TF1("f_bl", "[0]+[1]*sin([2]+[3]*x)");
+      f->SetParameter(0, baseline);
+      f->SetParameter(1, 40./scale_factor);
+      f->SetParameter(2, 1.);
+      f->SetParameter(3, 2*TMath::Pi()/75.);
+      f->SetParNames("const", "A", "phi0", "omega");
+      auto r = gr_bl.Fit(f, "SQN");
+      if (draw_debug_pulses) {
+        cout << "Harmonic Noise Removal:\n";
+        cout << Form("const = %.2f\n", f->GetParameter(0)*scale_factor);
+        cout << Form("A = %.2f\n", f->GetParameter(1)*scale_factor);
+        cout << Form("phi_0 = %.2f\n", f->GetParameter(2));
+        cout << Form("T = %.2f\n", 2*TMath::Pi()/f->GetParameter(3));
+      }
+
+      baseline = f->GetParameter(0);
+    }
 
     if (config->channels[i].v_baseline.size() < 200) {
       config->channels[i].v_baseline.push_back(baseline);
     }
-    else {         
+    else {
       float mean = TMath::Mean(config->channels[i].v_baseline.size(), &(config->channels[i].v_baseline[0]));
       float rms = TMath::RMS(config->channels[i].v_baseline.size(), &(config->channels[i].v_baseline[0]));
 
-      if (fabs(mean - baseline)/rms > 10) {	
+      if (fabs(mean - baseline)/rms > 10) {
 	  cout << "\n*********************************************************\n";
 	  cout <<   "******                   Warning           **************\n";
 	  cout << "Event : " << i_evt << "\t Baseline for channel " << i << " was observed to be " << baseline << " and is more than 10 standard deviations away from the average ( " << mean << " ). " << endl;
 	  cout <<   "*********************************************************\n";
-	  cout << "\n";		
+	  cout << "\n";
 
 	  //sixie: don't do this correction because it can cause subsequent algorithms to
 	  //       segfault. ideally should fix the algorithm, but for now just don't do
@@ -126,7 +147,10 @@ void DatAnalyzer::Analyze(){
     unsigned int idx_min = 0;
     float amp = 0;
     for(unsigned int j=0; j<NUM_SAMPLES; j++) {
-      channel[i][j] = scale_factor * (channel[i][j] - baseline);//baseline subtraction
+      if(config->channels[i].algorithm.Contains("HNR")) {
+        channel[i][j] = scale_factor * (channel[i][j] - f->Eval(time[GetTimeIndex(i)][j]));//baseline subtraction
+      }
+      else channel[i][j] = scale_factor * (channel[i][j] - baseline);//baseline subtraction
       bool range_check = j>bl_st_idx+bl_length && j<(int)(0.9*NUM_SAMPLES);
       bool max_check = true;
       if ( config->channels[i].counter_auto_pol_switch >= 0 ) {
@@ -142,6 +166,8 @@ void DatAnalyzer::Analyze(){
         amp = channel[i][j];
       }
     }
+
+    if(config->channels[i].algorithm.Contains("HNR")) {delete f;}
 
     //************************************************************************************
     //If the minimum point is the first sample, then the channel is bad, and we skip it.
@@ -833,8 +859,8 @@ void DatAnalyzer::RunEventsLoop() {
         if ((i_evt % 100 == 0 && std::time(0) - last_displaced_time > 5) || i_evt == 0) {
           last_displaced_time = std::time(0);
         }
-	if (i_evt % 1 == 0) cerr << "Processing Event " << i_evt << "\n";
-       
+      	if (i_evt % 100 == 0) cerr << "Processing Event " << i_evt << "\n";
+
         int corruption = GetChannelsMeasurement();
         if (corruption == 1) {
           cout << "\tAnomaly detected at event " << i_evt << endl;
