@@ -859,7 +859,7 @@ void DatAnalyzer::RunEventsLoop() {
         if ((i_evt % 100 == 0 && std::time(0) - last_displaced_time > 5) || i_evt == 0) {
           last_displaced_time = std::time(0);
         }
-      	if (i_evt % 100 == 0) cerr << "Processing Event " << i_evt << "\n";
+      	if (i_evt % 1 == 0) cerr << "Processing Event " << i_evt << "\n";
 
         int corruption = GetChannelsMeasurement();
         if (corruption == 1) {
