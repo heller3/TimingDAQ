@@ -214,12 +214,8 @@ int DT5742Analyzer::GetChannelsMeasurement() {
       }
     }
 
-    //long lSize;
-    //float* buffer;
-    //size_t result;
-    // obtain file size:
+    int  event_size = 73752;
 
-    //printf("%d\n", lSize);
     if ( i_evt == 0 )
     {
       fseek (bin_file , 0 , SEEK_END);
@@ -227,43 +223,40 @@ int DT5742Analyzer::GetChannelsMeasurement() {
       rewind (bin_file);
       // allocate memory to contain the whole file
       buffer = (float*) malloc (sizeof(float)*lSize);
-      //std::cout << "[INFO]: n_events: " << nevents << std::endl;
+
+      int nevents = lSize/event_size;
+      cout << "[INFO] File size comaptible with " << nevents << " events" << endl;
+      if (N_evts == 0 || N_evts > nevents) {
+        cout << "[INFO] Setting max event to " << nevents << endl;
+        N_evts = nevents;
+      }
     }
 
     if (buffer == NULL) {fputs ("Memory error\n",stderr); exit (2);}
-    int  event_size = 73752;
-    int nevents = lSize/event_size;
-    N_evts = nevents;
-    if ( i_evt == 0 ) std::cout << "[INFO]: n_events: " << nevents << std::endl;
-    //std::cout << "nevents: " << nevents << std::endl;
-    //*************************
-    //Event Loop
-    //*************************
-    //i_evt = 0;
-    //for( int ievent = 0; ievent < nevents; ievent++)
-    //{
-      //if ( ievent % 1000 == 0 ) std::cout << "[INFO]: processing event #" << ievent << std::endl;
-      // copy the file into the buffer:
-      result = fread (buffer,1,event_size,bin_file);
-      //std::cout << result << " " << i_evt  << std::endl;
-      if (result != event_size) {fputs ("Reading error\n",stderr); exit (3);}
-      double x;
-      //x = *(buffer+6);
-      x = *(buffer+6);
-      for(int j = 0; j < 18; j++)
-	    {
-        for(int i = 0; i < 1024; i++ )
-        {
-		  		raw[j][i] = buffer[i+6+j*1024];
-		  		//channel[j][i] = ( raw[j][i] - 2047. )/4096. ;//converting to volts [V]
-          channel[j][i] = raw[j][i];
-			  	//std::cout << "i = " << i << " ; j = " << j << " ; raw[j][i] = " << raw[j][i] << " ; channel[j][i] = " << channel[j][i] << std::endl;
-          //bin[i] = i;
-          time[0][i] = i*0.2;
-          time[1][i] = i*0.2;
-        }
-	    }
-    //}
+
+    result = fread (buffer,1,event_size,bin_file);
+    //std::cout << result << " " << i_evt  << std::endl;
+    if (result != event_size) {
+      fputs ("Reading error\n",stderr);
+      exit (3);
+    }
+    double x;
+
+    x = *(buffer+6);
+    for(int j = 0; j < 18; j++)
+    {
+      for(int i = 0; i < 1024; i++ )
+      {
+	  		raw[j][i] = buffer[i+6+j*1024];
+	  		//channel[j][i] = ( raw[j][i] - 2047. )/4096. ;//converting to volts [V]
+        channel[j][i] = raw[j][i];
+		  	//std::cout << "i = " << i << " ; j = " << j << " ; raw[j][i] = " << raw[j][i] << " ; channel[j][i] = " << channel[j][i] << std::endl;
+        //bin[i] = i;
+        time[0][i] = i*0.2;
+        time[1][i] = i*0.2;
+      }
+    }
+
     return 0;
 };
 

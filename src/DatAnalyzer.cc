@@ -856,10 +856,10 @@ void DatAnalyzer::RunEventsLoop() {
     {
       auto last_displaced_time = std::time(0);
       for( i_evt = 0; !feof(bin_file) && (N_evts==0 || i_evt<N_evts); i_evt++){
-        if ((i_evt % 100 == 0 && std::time(0) - last_displaced_time > 5) || i_evt == 0) {
+        if (verbose || (i_evt % 100 == 0 && std::time(0) - last_displaced_time > 3) || i_evt == 0) {
           last_displaced_time = std::time(0);
+          cerr << "Processing Event " << i_evt << "\n";
         }
-      	if (i_evt % 1 == 0) cerr << "Processing Event " << i_evt << "\n";
 
         int corruption = GetChannelsMeasurement();
         if (corruption == 1) {
@@ -867,8 +867,8 @@ void DatAnalyzer::RunEventsLoop() {
         }
         else if( i_evt >= start_evt && corruption == 0 ) {
           Analyze();
-          N_written_evts++;
           tree->Fill();
+          N_written_evts++;
         }
         else {
           // cout << i_evt << endl;
@@ -934,6 +934,12 @@ void DatAnalyzer::GetCommandLineArgs(int argc, char **argv) {
   ifstream in_file(input_file_path.Data());
   if (!in_file || input_file_path == "" || !(input_file_path.EndsWith(".dat") || input_file_path.EndsWith(".root")) ){
     cerr << "[ERROR]: please provide a valid input file. Use: --input_file=<your_input_file_path>.dat or  --input_file=<your_input_file_path>.root" << endl;
+    if (!in_file) {
+      cerr << "Can not open file: " << input_file_path.Data() << endl;
+    }
+    else if (input_file_path == "") {
+      cerr << "Empty input file path." << endl;
+    }
     exit(0);
   }
   else if (verbose)
