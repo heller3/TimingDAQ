@@ -75,9 +75,13 @@ void DatAnalyzer::Analyze(){
       continue;
     }
     TString name = Form("pulse_event%d_ch%d", i_evt, i);
+    
+    //-------------------------------------------------------------------------------------
     // Get the attenuation/amplification scale factor and convert ADC counts to mV
+    //IMPORTANT: polarity is taking into account here! if negative it will switch the pulse
+    //-------------------------------------------------------------------------------------
     float scale_factor = (1000.0 * DAC_SCALE / (float)DAC_RESOLUTION) * config->getChannelMultiplicationFactor(i);
-
+    
     // ------- Get baseline ------
     float baseline = 0;
     float bl_start_time = config->channels[i].baseline_time[0];
@@ -126,11 +130,11 @@ void DatAnalyzer::Analyze(){
       float rms = TMath::RMS(config->channels[i].v_baseline.size(), &(config->channels[i].v_baseline[0]));
 
       if (fabs(mean - baseline)/rms > 10) {
-	  cout << "\n*********************************************************\n";
-	  cout <<   "******                   Warning           **************\n";
-	  cout << "Event : " << i_evt << "\t Baseline for channel " << i << " was observed to be " << baseline << " and is more than 10 standard deviations away from the average ( " << mean << " ). " << endl;
-	  cout <<   "*********************************************************\n";
-	  cout << "\n";
+	//cout << "\n*********************************************************\n";
+	// cout <<   "******                   Warning           **************\n";
+	// cout << "Event : " << i_evt << "\t Baseline for channel " << i << " was observed to be " << baseline << " and is more than 10 standard deviations away from the average ( " << mean << " ). " << endl;
+	//cout <<   "*********************************************************\n";
+	// cout << "\n";
 
 	  //sixie: don't do this correction because it can cause subsequent algorithms to
 	  //       segfault. ideally should fix the algorithm, but for now just don't do
@@ -142,7 +146,6 @@ void DatAnalyzer::Analyze(){
       }
     }
     var["baseline"][i] = scale_factor * baseline;
-
     // ------------- Get minimum position, max amplitude and scale the signal
     unsigned int idx_min = 0;
     float amp = 0;
@@ -153,7 +156,7 @@ void DatAnalyzer::Analyze(){
       else channel[i][j] = scale_factor * (channel[i][j] - baseline);//baseline subtraction
       bool range_check = j>bl_st_idx+bl_length && j<(int)(0.9*NUM_SAMPLES);
       bool max_check = true;
-      if ( config->channels[i].counter_auto_pol_switch >= 0 ) {
+      if ( config->channels[i].counter_auto_pol_switch > 0 ) {
         max_check = fabs(channel[i][j]) > fabs(amp);
       }
       else {
@@ -167,6 +170,7 @@ void DatAnalyzer::Analyze(){
       }
     }
 
+    //std::cout << "amp: " << amp << std::endl;
     if(config->channels[i].algorithm.Contains("HNR")) {delete f;}
 
     //************************************************************************************
@@ -207,32 +211,36 @@ void DatAnalyzer::Analyze(){
     fittable *= fabs(channel[i][idx_min-2]) > 3*baseline_RMS;
     // fittable *= fabs(channel[i][idx_min+3]) > 2*baseline_RMS;
     // fittable *= fabs(channel[i][idx_min-3]) > 2*baseline_RMS;
-    if( fittable  && !config->channels[i].algorithm.Contains("None")) {
-      // Correct the polarity if wrong
-      if( amp > 0 && config->channels[i].counter_auto_pol_switch >= 0 ) {
-        config->channels[i].polarity *= -1;
-        amp = -amp;
-        var["amp"][i] = -amp;
-        scale_factor = -scale_factor;
-        var["baseline"][i] = scale_factor * baseline;
-        for(unsigned int j=0; j<NUM_SAMPLES; j++) {
-          channel[i][j] = -channel[i][j];
-        }
-        delete pulse;
-        pulse = new TGraphErrors(NUM_SAMPLES, time[GetTimeIndex(i)], channel[i], 0, yerr);
-        pulse->SetNameTitle("g_"+name, "g_"+name);
-
-        if ( config->channels[i].counter_auto_pol_switch == 10 ) {
-          cout << "[WARNING] Channel " << i << " automatic polarity switched more than 10 times" << endl;
-        }
-        config->channels[i].counter_auto_pol_switch ++;
+    
+    //-------------------------------------------------------------
+    //If pulse is still possitive change it automatically
+    //No sure this is a good idea (CP)
+    //-------------------------------------------------------------
+    if( var["amp"][i] < 0 && config->channels[i].counter_auto_pol_switch > 0 ) {
+      //config->channels[i].polarity *= -1;
+      //amp = -amp;
+      var["amp"][i] = -var["amp"][i];
+      scale_factor = -scale_factor;
+      var["baseline"][i] = -var["baseline"][i];
+      for(unsigned int j=0; j<NUM_SAMPLES; j++) {
+	channel[i][j] = -channel[i][j];
       }
+      delete pulse;
+      pulse = new TGraphErrors(NUM_SAMPLES, time[GetTimeIndex(i)], channel[i], 0, yerr);
+      pulse->SetNameTitle("g_"+name, "g_"+name);
 
-      /*
-      ***********************************
-      //Get 10% of the amplitude crossings
-      ************************************
-      */
+      if ( config->channels[i].counter_auto_pol_switch == 10 ) {
+	cout << "[WARNING] Channel " << i << ": automatic polarity switched more than 10 times" << endl;
+	cout << "[WARNING] Channel " << i << ": gonna keep inverting it for you. Better check your pulse polarity!!" << endl;
+      }
+      config->channels[i].counter_auto_pol_switch ++;
+    }
+    
+    if( fittable  && !config->channels[i].algorithm.Contains("None")) {
+      /************************************
+       //Get 10% of the amplitude crossings
+       ************************************
+       */
       j_10_pre = GetIdxFirstCross(amp*0.1, channel[i], idx_min, -1);
       j_10_post = GetIdxFirstCross(amp*0.1, channel[i], idx_min, +1);
 
