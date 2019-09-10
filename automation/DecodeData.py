@@ -55,28 +55,28 @@ if __name__ == '__main__':
             os.mkdir(output_dir)
 
         for run in runs_list:
-            print '========================== Processing Run {} =========================='.format(run)
+            print '========================== Processing Run {0} =========================='.format(run)
 
             N_expected_evts = -1
             if not args.no_NimPlus:
-                NimPlus_file = data_dir + 'NimPlus/TriggerCountNimPlus_{}.cnt'.format(run)
+                NimPlus_file = data_dir + 'NimPlus/TriggerCountNimPlus_{0}.cnt'.format(run)
                 if os.path.exists(NimPlus_file):
-                    cmd = 'more {} | grep {} | awk \'{{print $3}}\''.format(NimPlus_file, args.NimPlus_flag)
+                    cmd = 'more {0} | grep {1} | awk \'{{print $3}}\''.format(NimPlus_file, args.NimPlus_flag)
                     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True)
                     (out, err) = proc.communicate()
                     N_expected_evts = int(out)
                 else:
                     print '[WARNING] No NimPlus file present: ' + NimPlus_file
 
-            raw_filename = data_dir + 'VME/RawData/RawDataSaver0CMSVMETiming_Run{}_0_Raw.dat'.format(run)
+            raw_filename = data_dir + 'VME/RawData/RawDataSaver0CMSVMETiming_Run{0}_0_Raw.dat'.format(run)
             if not os.path.exists(raw_filename):
                 if args.verbose:
                     print 'Creating the VME file: ', raw_filename
 
-                matched_files = glob.glob('{}/RawDataSaver0CMSVMETiming_Run{}_*_Raw.dat'.format(data_dir + 'VME/RAW', run))
+                matched_files = glob.glob('{0}/RawDataSaver0CMSVMETiming_Run{1}_*_Raw.dat'.format(data_dir + 'VME/RAW', run))
 
                 if len(matched_files) == 0:
-                    sys.exit('[ERROR] Unable to find files like: ' +  '{}/RawDataSaver0CMSVMETiming_Run{}_*_Raw.dat'.format(data_dir + 'VME/RAW', run))
+                    sys.exit('[ERROR] Unable to find files like: ' +  '{0}/RawDataSaver0CMSVMETiming_Run{1}_*_Raw.dat'.format(data_dir + 'VME/RAW', run))
                 elif len(matched_files) > 1:
                     cmd = 'cat ' + ' '.join(matched_files) + ' > ' +raw_filename
                     # print cmd
@@ -89,7 +89,7 @@ if __name__ == '__main__':
             else:
                 print 'VME file found: ', raw_filename
 
-            root_filename = output_dir + '/DataVMETiming_Run{}.root'.format(run)
+            root_filename = output_dir + '/DataVMETiming_Run{0}.root'.format(run)
             if args.no_Dat2Root:
                 print '[INFO] No Dat2Root flag active'
                 continue
@@ -99,7 +99,7 @@ if __name__ == '__main__':
 
             cmd_Dat2Root = code_dir + 'VMEDat2Root'
             cmd_Dat2Root += ' --input_file=' + raw_filename
-            cmd_Dat2Root += ' --config=' + code_dir + 'config/' + args.config_dir + 'VME_{}.config'.format(args.vVME)
+            cmd_Dat2Root += ' --config=' + code_dir + 'config/' + args.config_dir + 'VME_{0}.config'.format(args.vVME)
             if args.draw_debug_pulses:
                 cmd_Dat2Root += ' --draw_debug_pulses'
             if args.save_raw:
@@ -109,7 +109,7 @@ if __name__ == '__main__':
             if not args.NO_save_meas:
                 cmd_Dat2Root += ' --save_meas'
             if not args.no_tracks:
-                tracks_filename = data_dir + 'Tracks/Run{}_CMSTiming_SlowTriggerStream_converted.root'.format(run)
+                tracks_filename = data_dir + 'Tracks/Run{0}_CMSTiming_SlowTriggerStream_converted.root'.format(run)
 
                 if os.path.exists(tracks_filename):
                     cmd_Dat2Root += ' --pixel_input_file=' + tracks_filename
@@ -120,7 +120,7 @@ if __name__ == '__main__':
                         continue
             if not args.N_skip is None:
                 for i,n in enumerate(args.N_skip):
-                    cmd_Dat2Root += ' --NSkip{}={}'.format(i+1,n)
+                    cmd_Dat2Root += ' --NSkip{0}={1}'.format(i+1,n)
 
             N_tot = max(int(args.N_evts), N_expected_evts)
             nj = 1 + N_tot/args.N_max_job
@@ -141,8 +141,8 @@ if __name__ == '__main__':
                 print 'Dividing the run into', evt_start_list.shape[0], 'jobs'
                 outfile_list = []
                 for i in range(evt_start_list.shape[0]):
-                    print '\n\n ----------> Job {}/{}\n'.format(i+1, evt_start_list.shape[0])
-                    aux_name = root_filename.replace('.root', '_{}.root'.format(i))
+                    print '\n\n ----------> Job {0}/{1}\n'.format(i+1, evt_start_list.shape[0])
+                    aux_name = root_filename.replace('.root', '_{0}.root'.format(i))
                     outfile_list.append(aux_name)
 
                     aux_cmd = cmd_Dat2Root + ' --output_file=' + aux_name
@@ -190,16 +190,16 @@ if __name__ == '__main__':
             os.mkdir(output_dir)
 
         for run in runs_list:
-            print '========================== Processing Run {} =========================='.format(run)
+            print '========================== Processing Run {0} =========================='.format(run)
 
-            raw_filename = data_dir + 'NetScope/RAW/RawDataNetScope_Run{}.dat'.format(run)
+            raw_filename = data_dir + 'NetScope/RAW/RawDataNetScope_Run{0}.dat'.format(run)
             if not os.path.exists(raw_filename):
                 print '\nNetScope file NOT found: ', raw_filename
                 continue
             else:
                 print '\nNetScope file found: ', raw_filename
 
-            root_filename = output_dir + '/DataNetScope_Run{}.root'.format(run)
+            root_filename = output_dir + '/DataNetScope_Run{0}.root'.format(run)
             if args.no_Dat2Root:
                 print '[INFO] No Dat2Root flag active'
                 continue
@@ -209,7 +209,7 @@ if __name__ == '__main__':
 
             cmd_Dat2Root = code_dir + 'NetScopeDat2Root'
             cmd_Dat2Root += ' --input_file=' + raw_filename
-            cmd_Dat2Root += ' --config=' + code_dir + 'config/' + args.config_dir + 'NetScope_{}.config'.format(args.vNetScope)
+            cmd_Dat2Root += ' --config=' + code_dir + 'config/' + args.config_dir + 'NetScope_{0}.config'.format(args.vNetScope)
             cmd_Dat2Root += ' --output_file=' + root_filename
             cmd_Dat2Root += ' --N_evts=' + args.N_evts
             if args.draw_debug_pulses:
