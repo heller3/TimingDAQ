@@ -565,21 +565,29 @@ void DatAnalyzer::Analyze(){
 
         //compute the signal amplitude from interpolation
         double tStep = (time[GetTimeIndex(i)][NUM_SAMPLES-1] - time[GetTimeIndex(i)][0])/(double)(NUM_SAMPLES-1)*1. ;
-        double tmpT = var["t_peak"][i]-2.*var["risetime"][i];
+        double realrisetime = abs(0.8*var["amp"][i] / var["risetime"][i]);
+
+        
+        //Hack for square pulses
+        double startTime = var["t_peak"][i]-2.*realrisetime;
+        if(config->constant_fraction.size() > 0 && startTime > var[Form("LP2_%d",(int)(100*config->constant_fraction.at(0)))][i] ) startTime = var[Form("LP2_%d",(int)(100*config->constant_fraction.at(0)))][i]-2.*realrisetime;
+        double tmpT = startTime;
         var["InterpolatedAmp"][i] = 666;
-        //std::cout << "====================" << std::endl;
-        while ( tmpT < var["t_peak"][i] + 5.0 )
+        // std::cout << "====================" << std::endl;
+        // cout<<"t_peak "<<var["t_peak"][i]<<" "<<realrisetime<<std::endl;
+        // cout << "time : " << tmpT << " --> " << voltage->f(tmpT)<<std::endl ;
+        while ( tmpT < var["t_peak"][i] + 5.0e-9 )
         {
-          //cout << "time : " << tmpT << " --> " << voltage->f(tmpT) ;
+          // cout << "time : " << tmpT << " --> " << voltage->f(tmpT) <<std::endl;
           if (voltage->f(tmpT) < var["InterpolatedAmp"][i])//find minimum (negative going pulses)
           {
             var["InterpolatedAmp"][i] = voltage->f(tmpT);
-            //cout << " !!!MAX!!! ";
+            // cout << " !!!MAX!!! ";
           }
           //cout << "\n";
-          tmpT += 0.001;
+          tmpT += 0.001e-9;
         }
-
+        // cout<<"Finished first while loop, amp is "<<fabs(var["InterpolatedAmp"][i])<<std::endl;
         var["InterpolatedAmp"][i] = fabs(var["InterpolatedAmp"][i]);
 
         //Constant threshold timestamping
@@ -590,7 +598,7 @@ void DatAnalyzer::Analyze(){
           if ( var["amp"][i] > fabs(thr) )
           {
             //std::cout << "=====Constant Threshold======" << var["amp"][i] << " " << thr << "========================" << std::endl;
-            int retCode = TimeOverThreshold( voltage, thr, var["t_peak"][i]-2.*var["risetime"][i], time[GetTimeIndex(i)][NUM_SAMPLES-1], i, GetTimeIndex(i), var[Form("t0_%d", (int)(fabs(thr)))][i],var[Form("t1_%d", (int)(fabs(thr)))][i]);
+            int retCode = TimeOverThreshold( voltage, thr, startTime, time[GetTimeIndex(i)][NUM_SAMPLES-1], i, GetTimeIndex(i), var[Form("t0_%d", (int)(fabs(thr)))][i],var[Form("t1_%d", (int)(fabs(thr)))][i]);
             if( retCode == 0 ) var[Form("tot_%d", (int)(fabs(thr)))][i] = var[Form("t1_%d", (int)(fabs(thr)))][i]-var[Form("t0_%d", (int)(fabs(thr)))][i];
           }
         }
@@ -605,7 +613,8 @@ void DatAnalyzer::Analyze(){
             //pulses are negative, so need to multiply the amplitude by -1.0
             double CFDThreshold = -1.0 * thr * var["InterpolatedAmp"][i];
             //std::cout << "===CFD====" << var["amp"][i] << " " << CFDThreshold << "========================" << std::endl;
-            int retCode = TimeOverThreshold( voltage, CFDThreshold, var["t_peak"][i]-2.*var["risetime"][i], 200 , i, GetTimeIndex(i), var[Form("t0CFD_%d", (int)(100*thr))][i],var[Form("t1CFD_%d", (int)(100*thr))][i]);
+            int retCode = TimeOverThreshold( voltage, CFDThreshold, startTime, time[GetTimeIndex(i)][NUM_SAMPLES-1] , i, GetTimeIndex(i), var[Form("t0CFD_%d", (int)(100*thr))][i],var[Form("t1CFD_%d", (int)(100*thr))][i]);
+            // int retCode = TimeOverThreshold( voltage, CFDThreshold, startTime, 200 , i, GetTimeIndex(i), var[Form("t0CFD_%d", (int)(100*thr))][i],var[Form("t1CFD_%d", (int)(100*thr))][i]);
             if( retCode == 0 ) var[Form("totCFD_%d", (int)(100*thr))][i] = var[Form("t1CFD_%d", (int)(100*thr))][i]-var[Form("t0CFD_%d", (int)(100*thr))][i];
           }
         }
