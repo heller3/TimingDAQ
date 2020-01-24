@@ -92,7 +92,7 @@ void Configuration::parseConfigurationLine(std::string line) {
       nextConfigurationElement(ss, item);
       TString aux_string = item;
       if ( aux_string.Contains(".") ) {
-          aux_ch.counter_auto_pol_switch = 0;
+          aux_ch.counter_auto_pol_switch = 1;
           if( verbose ) { cout << "    Polarity switch allowed." << std::endl;}
       }
       if ( aux_string.Contains("+") ) {
