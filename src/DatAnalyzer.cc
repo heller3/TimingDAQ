@@ -216,9 +216,10 @@ void DatAnalyzer::Analyze(){
     //If pulse is still possitive change it automatically
     //No sure this is a good idea (CP)
     //-------------------------------------------------------------
+    if( fittable  && !config->channels[i].algorithm.Contains("None")) {
     if( var["amp"][i] < 0 && config->channels[i].counter_auto_pol_switch > 0 ) {
-      //config->channels[i].polarity *= -1;
-      //amp = -amp;
+      config->channels[i].polarity *= -1;
+      amp = -amp;
       var["amp"][i] = -var["amp"][i];
       scale_factor = -scale_factor;
       var["baseline"][i] = -var["baseline"][i];
@@ -236,7 +237,7 @@ void DatAnalyzer::Analyze(){
       config->channels[i].counter_auto_pol_switch ++;
     }
     
-    if( fittable  && !config->channels[i].algorithm.Contains("None")) {
+    // if( fittable  && !config->channels[i].algorithm.Contains("None")) {
       /************************************
        //Get 10% of the amplitude crossings
        ************************************
