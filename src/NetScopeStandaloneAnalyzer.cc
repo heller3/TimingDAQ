@@ -49,6 +49,8 @@ void NetScopeStandaloneAnalyzer::InitLoop(){
       tree->Branch("y_dut", &(y_DUT[0]), Form("y_dut[%lu]/F", config->z_DUT.size()));
     }
     tree->Branch("chi2", &chi2, "chi2/F");
+    tree->Branch("xResidBack", &xResidBack, "xResidBack/F");
+    tree->Branch("yResidBack", &yResidBack, "yResidBack/F");
     tree->Branch("ntracks", &ntracks, "ntracks/I");
     tree->Branch("nplanes", &nplanes, "nplanes/I");
     tree->Branch("npix", &npix, "npix/I");
@@ -99,6 +101,8 @@ void NetScopeStandaloneAnalyzer::Analyze(){
       y_DUT[i] = -999;
     }
     chi2 = -999.;
+    xResidBack = 9999.;
+    yResidBack = 9999.;
     ntracks = 0;
     nplanes = 0;
     npix = 0;
@@ -117,6 +121,8 @@ void NetScopeStandaloneAnalyzer::Analyze(){
             y_DUT[i] = yIntercept + ySlope*(config->z_DUT[i]);
           }
           chi2 = pixel_event->chi2;
+          xResidBack = pixel_event->xResidBack;
+          yResidBack = pixel_event->yResidBack;
           nplanes = pixel_event->nPlanes;
           npix = pixel_event->numPixels;
           nback = pixel_event->numBackPlanes;

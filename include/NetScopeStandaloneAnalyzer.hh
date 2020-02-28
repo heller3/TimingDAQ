@@ -20,7 +20,9 @@ class NetScopeStandaloneAnalyzer : public DatAnalyzer {
 	      double ySlope;
 	      double xIntercept;
 	      double yIntercept;
-	      double chi2;
+          double chi2;
+          double xResidBack;
+	      double yResidBack;
 	      int trigger;
 	      int runNumber;
 	      int nPlanes;
@@ -63,6 +65,8 @@ class NetScopeStandaloneAnalyzer : public DatAnalyzer {
     vector<float> x_DUT;
     vector<float> y_DUT;
     float chi2=0;
+    float xResidBack=0;
+    float yResidBack=0;
     int ntracks=0;
     int nplanes=0;
     int npix=0;
