@@ -1,8 +1,8 @@
 #ifndef NetScopeStandaloneAnalyzer_HH
 #define NetScopeStandaloneAnalyzer_HH
-#define NetScope_CHANNELS 4
+#define NetScope_CHANNELS 8
 #define NetScope_TIMES 1
-#define NetScope_SAMPLES 1600
+#define NetScope_SAMPLES 502
 #define NetScope_F_SAMPLES 0
 #define SCOPE_MEM_LENGTH_MAX 12500000
  
