@@ -49,7 +49,7 @@ class NetScopeStandaloneAnalyzer : public DatAnalyzer {
     vector<int> active_ch = {0,1,2,3};
     // Set by command line arguments or default
     TString pixel_input_file_path;
-
+    bool skip_tracks;
     // Pixel events variables
     FTBFPixelEvent* pixel_event= nullptr;
     TFile *pixel_file = nullptr;
