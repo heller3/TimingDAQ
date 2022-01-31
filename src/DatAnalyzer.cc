@@ -1388,7 +1388,7 @@ int DatAnalyzer::TimeOverThreshold(Interpolator *voltage, double tThresh, double
   	std::cout << "time1: " << time1 << " f(t) = " << voltage->f(time1) << std::endl;
   	std::cout << "===================================" << std::endl;
   */
-	tStep = tStepInit*10.;
+	tStep = tStepInit ; //*10.;
 	t += tStep;
 
 	nIterations = 0;

@@ -1,8 +1,8 @@
 #ifndef NetScopeStandaloneAnalyzer_HH
 #define NetScopeStandaloneAnalyzer_HH
-#define NetScope_CHANNELS 4
+#define NetScope_CHANNELS 8
 #define NetScope_TIMES 1
-#define NetScope_SAMPLES 1500
+#define NetScope_SAMPLES 2002//502//2000 //1000
 #define NetScope_F_SAMPLES 0
 #define SCOPE_MEM_LENGTH_MAX 12500000
  
@@ -43,7 +43,7 @@ class NetScopeStandaloneAnalyzer : public DatAnalyzer {
     void Analyze();
     
   protected:
-    vector<int> active_ch = {0,1,2,3};
+    vector<int> active_ch = {0,1,2,3,4,5,6,7};
     // Set by command line arguments or default
     TString pixel_input_file_path;
 
