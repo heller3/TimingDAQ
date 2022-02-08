@@ -45,9 +45,14 @@ class DatAnalyzer {
         int getNumTimes() { return NUM_TIMES; }
         int getNumSamples() { return NUM_SAMPLES; }
 
+        void setNumChannels(unsigned int numChannels) {NUM_CHANNELS = numChannels;}
+        void setNumTimes(unsigned int numTimes) {NUM_TIMES = numTimes;}
+        void setNumSamples(unsigned int numSamples) {NUM_SAMPLES = numSamples;}
+
         TString ParseCommandLine( int argc, char* argv[], TString opt );
         virtual void GetCommandLineArgs(int argc, char **argv);
 
+        virtual void InitOutput();
         virtual void InitLoop();
         virtual void ResetVar(unsigned int n_ch);
 
@@ -80,9 +85,9 @@ class DatAnalyzer {
 
     protected:
 
-        const unsigned int NUM_CHANNELS;
-        const unsigned int NUM_TIMES;
-        const unsigned int NUM_SAMPLES;
+        unsigned int NUM_CHANNELS;
+        unsigned int NUM_TIMES;
+        unsigned int NUM_SAMPLES;
         const unsigned int NUM_F_SAMPLES;//Fourier samples
         const unsigned int DAC_RESOLUTION; // DAC resolution (2^[bit])
         const float DAC_SCALE; // [V] total scale of the DAC

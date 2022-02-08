@@ -1,52 +1,14 @@
 #include "DatAnalyzer.hh"
 
 #define DEFAULT_FOR_EMPTY_CH 0
-#define THR_OVER_NOISE 3
 
 using namespace std;
 
 DatAnalyzer::DatAnalyzer(int numChannels, int numTimes, int numSamples, int res, float scale, int numFsamples) :
         NUM_CHANNELS(numChannels), NUM_TIMES(numTimes), NUM_SAMPLES(numSamples), NUM_F_SAMPLES(numFsamples),
         DAC_RESOLUTION(res), DAC_SCALE(scale),
-        file(0), tree(0) {
-
-    AUX_time = new float[numTimes*numSamples];
-    AUX_channel = new float[numChannels*numSamples];
-
-    time    = new float*[numTimes];
-    channel = new float*[numChannels];
-
-    if ( numFsamples > 0 )
-    {
-      AUX_channel_spectrum = new float[numChannels*numFsamples];
-      channel_spectrum     = new float*[numFsamples];
-      frequency = new float[numFsamples];
-    }
-
-    for(unsigned int i=0; i<numChannels; i++)
-    {
-      channel[i] = &(AUX_channel[i*numSamples]);
-      if(i<numTimes) time[i] = &(AUX_time[i*numSamples]);
-      if ( numFsamples ) channel_spectrum[i] = &(AUX_channel_spectrum[i*numFsamples]);
-    }
-
-    if ( numFsamples > 0 )
-    {
-      float f_step = (F_HIGH-F_LOW)/float(numFsamples);
-      for (unsigned int i = 0; i < numFsamples; i++)
-      {
-        frequency[i] = F_LOW + f_step*float(i);
-      }
-    }
-
-    if ( verbose ) {
-      cout << "NUM_CHANNELS: " << NUM_CHANNELS << endl;
-      cout << "NUM_TIMES: " << NUM_TIMES << endl;
-      cout << "NUM_SAMPLES: " << NUM_SAMPLES << endl;
-      cout << "NUM_F_SAMPLES: " << NUM_F_SAMPLES << endl;
-      cout << "DAC_SCALE : " << DAC_SCALE << "\n";
-      cout << "DAC_RESOLUTION : " << DAC_RESOLUTION << "\n";
-    }
+        file(0), tree(0) 
+{
 }
 
 DatAnalyzer::~DatAnalyzer()
@@ -863,8 +825,6 @@ Loop Over All Events and Check Corruption
 *****************************************
 */
 void DatAnalyzer::RunEventsLoop() {
-    InitLoop();
-
     unsigned int evt_progress_print_rate = verbose ? 100 : 1000;
     evt_progress_print_rate = 1;
 
@@ -905,9 +865,6 @@ void DatAnalyzer::RunEventsLoop() {
         Analyze();
         N_written_evts++;
         tree->Fill();
-        if(N_written_evts%evt_progress_print_rate == 0) {
-          //cout << "!!!!!!!!!!!!!!!!! Event : " << N_written_evts << endl;
-        }
       }
     }
 
@@ -1055,7 +1012,12 @@ void DatAnalyzer::GetCommandLineArgs(int argc, char **argv) {
   }
 }
 
-void DatAnalyzer::InitLoop() {
+void DatAnalyzer::InitOutput() {
+    /*
+    ************************
+    INITIALIZE TFILE and OUTPUT TREE
+    ************************
+    */
     std::cout << "Initializing input file reader and output tree" << std::endl;
     file = new TFile(output_file_path.Data(), "RECREATE");
     ifstream out_file(output_file_path.Data());
@@ -1065,12 +1027,58 @@ void DatAnalyzer::InitLoop() {
     }
     tree = new TTree("pulse", "Digitized waveforms");
     tree->Branch("i_evt", &i_evt, "i_evt/i");
-
+    
     if ( input_file_path.EndsWith(".root") )//place holder for input file in the future.
     {
       std::cout << "Initializing input root file" << std::endl;
       file_in = new TFile(input_file_path,"READ");
       tree_in = (TTree*)file_in->Get("pulse");
+    }
+}
+
+void DatAnalyzer::InitLoop() {
+    /*
+    ************************
+    Define PULSHAPES
+    ************************
+    */
+    std::cout << "Define pulse shapes" << std::endl;
+    AUX_time = new float[NUM_TIMES*NUM_SAMPLES];
+    AUX_channel = new float[NUM_CHANNELS*NUM_SAMPLES];
+
+    time    = new float*[NUM_TIMES];
+    channel = new float*[NUM_CHANNELS];
+
+    if ( NUM_F_SAMPLES > 0 )
+    {
+      AUX_channel_spectrum = new float[NUM_CHANNELS*NUM_F_SAMPLES];
+      channel_spectrum     = new float*[NUM_F_SAMPLES];
+      frequency = new float[NUM_F_SAMPLES];
+    }
+
+    for(unsigned int i=0; i<NUM_CHANNELS; i++)
+    {
+      channel[i] = &(AUX_channel[i*NUM_SAMPLES]);
+      if(i<NUM_TIMES) time[i] = &(AUX_time[i*NUM_SAMPLES]);
+      if ( NUM_F_SAMPLES ) channel_spectrum[i] = &(AUX_channel_spectrum[i*NUM_F_SAMPLES]);
+    }
+
+    if ( NUM_F_SAMPLES > 0 )
+    {
+      float f_step = (F_HIGH-F_LOW)/float(NUM_F_SAMPLES);
+      for (unsigned int i = 0; i < NUM_F_SAMPLES; i++)
+      {
+        frequency[i] = F_LOW + f_step*float(i);
+      }
+    }
+
+    if ( verbose ) {
+      cout << "NUM_CHANNELS: " << NUM_CHANNELS << endl;
+      cout << "NUM_TIMES: " << NUM_TIMES << endl;
+      cout << "NUM_SAMPLES: " << NUM_SAMPLES << endl;
+      cout << "NUM_F_SAMPLES: " << NUM_F_SAMPLES << endl;
+      cout << "DAC_SCALE : " << DAC_SCALE << "\n";
+      cout << "DAC_RESOLUTION : " << DAC_RESOLUTION << "\n";
     }
 
     /*
