@@ -64,7 +64,7 @@ void NetScopeStandaloneAnalyzer::InitLoop(){
   setNumChannels(numChannels);
   setNumTimes(numTime);
   setNumSamples(numSamples);
-  for(unsigned int i = 0; i < numChannels; i++){active_ch.emplace_back(i);}
+  for(unsigned int i = 0; i < NUM_CHANNELS; i++){active_ch.emplace_back(i);}
 
   DatAnalyzer::InitLoop();
   cout<<"Finished datanalyzer InitLoop"<<endl;
@@ -72,6 +72,7 @@ void NetScopeStandaloneAnalyzer::InitLoop(){
   tree_in->SetBranchAddress("channel", &(channel[0][0]));
   tree_in->SetBranchAddress("time", &(time[0][0]));
   tree_in->SetBranchAddress("timeoffsets", &(timeOffset[0]));
+
   tree->Branch("timeoffsets", &(timeOffset[0]), Form("timeoffsets[%d]/F", NUM_CHANNELS));
 
   cout<<"Trying to open pixel file"<<endl;
