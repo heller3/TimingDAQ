@@ -2,20 +2,29 @@
 
 using namespace std;
 
+inline bool exists_test2 (const std::string& name) {
+  return ( access( name.c_str(), F_OK ) != -1 );
+}
+
 void NetScopeStandaloneAnalyzer::GetCommandLineArgs(int argc, char **argv){
   DatAnalyzer::GetCommandLineArgs(argc, argv);
   pixel_input_file_path = ParseCommandLine( argc, argv, "pixel_input_file" );
+  skip_tracks=false;
   if (pixel_input_file_path == ""){
     if (verbose) { cout << "Pixel input file not provided" << endl; }
   }
   else {
     if (verbose) { cout << "Pixel input file: " << pixel_input_file_path.Data() << endl; }
-    pixel_file = new TFile( pixel_input_file_path.Data(),"READ");
-    if (!pixel_file) {std::cout << "[ERROR]: Pixel file not found" << std::endl; exit(0);}
+    if (exists_test2(pixel_input_file_path.Data())) pixel_file = new TFile( pixel_input_file_path.Data(),"READ");
+    else {skip_tracks=true; cout<<"Pixel file doesn't exist; proceeding without tracks."<<endl;}
+    if (!pixel_file && !skip_tracks) {std::cout << "Pixel file not found. Exiting." << std::endl; exit(0);
+    }
+    if(!skip_tracks){
     TString tree_name = pixel_file->GetListOfKeys()->At(0)->GetName(); //Only works if it the tree is the first key
     pixel_tree = (TTree*)pixel_file->Get(tree_name);
     if (!pixel_tree) {cout << "[ERROR]: Pixel Tree not found\n"; exit(0);}
     entries_px_tree = pixel_tree->GetEntries();
+  }
   }
 
 }
@@ -62,9 +71,11 @@ void NetScopeStandaloneAnalyzer::InitLoop(){
   tree_in->SetBranchAddress("i_evt", &i_evt);
   tree_in->SetBranchAddress("channel", &(channel[0][0]));
   tree_in->SetBranchAddress("time", &(time[0][0]));
+  tree_in->SetBranchAddress("timeoffsets", &(timeOffset[0]));
+  tree->Branch("timeoffsets", &(timeOffset[0]), Form("timeoffsets[%d]/F", NUM_CHANNELS));
 
   cout<<"Trying to open pixel file"<<endl;
-  if(pixel_input_file_path != ""){
+  if(!skip_tracks && pixel_input_file_path != ""){
     pixel_event = new FTBFPixelEvent;
     pixel_tree->SetBranchAddress("event", pixel_event);
 
@@ -82,6 +93,8 @@ void NetScopeStandaloneAnalyzer::InitLoop(){
       tree->Branch("y_dut", &(y_DUT[0]), Form("y_dut[%lu]/F", config->z_DUT.size()));
     }
     tree->Branch("chi2", &chi2, "chi2/F");
+    tree->Branch("xResidBack", &xResidBack, "xResidBack/F");
+    tree->Branch("yResidBack", &yResidBack, "yResidBack/F");
     tree->Branch("ntracks", &ntracks, "ntracks/I");
     tree->Branch("nplanes", &nplanes, "nplanes/I");
     tree->Branch("npix", &npix, "npix/I");
@@ -119,7 +132,7 @@ Include telescope data, then call main analyzer DatAnalyzer::Analyze()
 **************************************************
 */
 void NetScopeStandaloneAnalyzer::Analyze(){
-  if(pixel_input_file_path != ""){
+  if(!skip_tracks &&pixel_input_file_path != ""){
     xIntercept = -999;
     yIntercept = -999;
     xSlope = -999;
@@ -129,6 +142,8 @@ void NetScopeStandaloneAnalyzer::Analyze(){
       y_DUT[i] = -999;
     }
     chi2 = -999.;
+    xResidBack = 9999.;
+    yResidBack = 9999.;
     ntracks = 0;
     nplanes = 0;
     npix = 0;
@@ -147,6 +162,8 @@ void NetScopeStandaloneAnalyzer::Analyze(){
             y_DUT[i] = yIntercept + ySlope*(config->z_DUT[i]);
           }
           chi2 = pixel_event->chi2;
+          xResidBack = pixel_event->xResidBack;
+          yResidBack = pixel_event->yResidBack;
           nplanes = pixel_event->nPlanes;
           npix = pixel_event->numPixels;
           nback = pixel_event->numBackPlanes;
@@ -159,7 +176,6 @@ void NetScopeStandaloneAnalyzer::Analyze(){
         exit(0);
       }
     }
-
   }
 
   //calling main analyzer -- DatAnalyzer::Analyze() -- in DatAnalyzer.cc

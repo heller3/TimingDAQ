@@ -186,15 +186,15 @@ void DatAnalyzer::Analyze(){
       scale_factor = -scale_factor;
       var["baseline"][i] = -var["baseline"][i];
       for(unsigned int j=0; j<NUM_SAMPLES; j++) {
-	channel[i][j] = -channel[i][j];
+	       channel[i][j] = -channel[i][j];
       }
       delete pulse;
       pulse = new TGraphErrors(NUM_SAMPLES, time[GetTimeIndex(i)], channel[i], 0, yerr);
       pulse->SetNameTitle("g_"+name, "g_"+name);
 
       if ( config->channels[i].counter_auto_pol_switch == 10 ) {
-	cout << "[WARNING] Channel " << i << ": automatic polarity switched more than 10 times" << endl;
-	cout << "[WARNING] Channel " << i << ": gonna keep inverting it for you. Better check your pulse polarity!!" << endl;
+	       cout << "[WARNING] Channel " << i << ": automatic polarity switched more than 10 times" << endl;
+	       cout << "[WARNING] Channel " << i << ": gonna keep inverting it for you. Better check your pulse polarity!!" << endl;
       }
       config->channels[i].counter_auto_pol_switch ++;
     }
@@ -226,6 +226,14 @@ void DatAnalyzer::Analyze(){
       var["decaytime"][i] = coeff[1];
       delete [] coeff;
 
+      /************************************
+      // -------------- Global Time-offsets
+      *************************************/
+      double myTimeOffset = 0;
+      if (correctForTimeOffsets) {
+        myTimeOffset = timeOffset[i];
+      }
+
 
       /************************************
       // -------------- Do the gaussian fit
@@ -252,7 +260,7 @@ void DatAnalyzer::Analyze(){
         else opt += "QN0";
         pulse->Fit("fpeak"+name, opt);
 
-        var["gaus_mean"][i] = fpeak->GetParameter(1);
+        var["gaus_mean"][i] = fpeak->GetParameter(1) + myTimeOffset;
         var["gaus_sigma"][i] = fpeak->GetParameter(2);
         var["gaus_chi2"][i] = pulse->Chisquare(fpeak, "R");
 
@@ -331,7 +339,7 @@ void DatAnalyzer::Analyze(){
             }
 
             // cout << Form("%g: %g %g %g %g %g %g", f, t1, v1, t2, v2, amp*f, out) << endl;
-            var[Form("IL_%d", (int)(100*f))][i] = out;
+            var[Form("IL_%d", (int)(100*f))][i] = out + myTimeOffset;
           }
 
           if( config->channels[i].algorithm.Contains("FL")) {
@@ -362,12 +370,12 @@ void DatAnalyzer::Analyze(){
             double m = (3*sxy - sx*sy)/(3*sx2 - sx*sx);
 
             // cout << Form("%g: %g %g %g %g %g %g", f, t1, v1, t2, v2, amp*f, out) << endl;
-            var[Form("FL_%d", (int)(100*f))][i] = m*amp*f + q;
+            var[Form("FL_%d", (int)(100*f))][i] = m*amp*f + q + myTimeOffset;
           }
 
           if (config->channels[i].algorithm.Contains("SPL")) {
             TGraph* inv_pulse = new TGraph(6, &(channel[i][j_close-2]), &(time[GetTimeIndex(i)][j_close-2]));
-            var[Form("SPL_%d", (int)(100*f))][i] = inv_pulse->Eval(amp*f, 0, "S");
+            var[Form("SPL_%d", (int)(100*f))][i] = inv_pulse->Eval(amp*f, 0, "S") + myTimeOffset;
             delete inv_pulse;
           }
 
@@ -394,7 +402,7 @@ void DatAnalyzer::Analyze(){
             }
             AnalyticalPolinomialSolver( 2*span_j + N_add , &(channel[i][j_close - span_j]), &(time[GetTimeIndex(i)][j_close - span_j]), n, coeff);
 
-            var[Form("LP%d_%d", n, (int)(100*f))][i] = PolyEval(f*amp, coeff, n);
+            var[Form("LP%d_%d", n, (int)(100*f))][i] = PolyEval(f*amp, coeff, n) + myTimeOffset;
 
             if(draw_debug_pulses) {
               coeff_poly_fit.push_back(coeff);
@@ -447,7 +455,7 @@ void DatAnalyzer::Analyze(){
               out = t1 + (t2 - t1) * (thr - v1)/(v2 - v1);
             }
 
-            var[Form("IL_%dmV", (int)(fabs(thr)))][i] = out;
+            var[Form("IL_%dmV", (int)(fabs(thr)))][i] = out + myTimeOffset;
           }
 
           if( config->channels[i].algorithm.Contains("FL")) {
@@ -478,12 +486,12 @@ void DatAnalyzer::Analyze(){
             double m = (3*sxy - sx*sy)/(3*sx2 - sx*sx);
 
             // cout << Form("%g: %g %g %g %g %g %g", f, t1, v1, t2, v2, amp*f, out) << endl;
-            var[Form("FL_%dmV", (int)(fabs(thr)))][i] = m*thr + q;
+            var[Form("FL_%dmV", (int)(fabs(thr)))][i] = m*thr + q + myTimeOffset;
           }
 
           if (config->channels[i].algorithm.Contains("SPL")) {
             TGraph* inv_pulse = new TGraph(6, &(channel[i][j_close-2]), &(time[GetTimeIndex(i)][j_close-2]));
-            var[Form("SPL_%dmV", (int)(fabs(thr)))][i] = inv_pulse->Eval(thr, 0, "S");
+            var[Form("SPL_%dmV", (int)(fabs(thr)))][i] = inv_pulse->Eval(thr, 0, "S") + myTimeOffset;
             delete inv_pulse;
           }
 
@@ -513,7 +521,7 @@ void DatAnalyzer::Analyze(){
             }
             AnalyticalPolinomialSolver( 2*span_j + N_add , &(channel[i][j_close - span_j]), &(time[GetTimeIndex(i)][j_close - span_j]), n, coeff);
 
-            var[Form("LP%d_%dmV", n, (int)(fabs(thr)))][i] = PolyEval(thr, coeff, n);
+            var[Form("LP%d_%dmV", n, (int)(fabs(thr)))][i] = PolyEval(thr, coeff, n) + myTimeOffset;
 
             if(draw_debug_pulses) {
               coeff_poly_fit.push_back(coeff);
@@ -569,7 +577,7 @@ void DatAnalyzer::Analyze(){
           if ( var["amp"][i] > fabs(thr) )
           {
             //std::cout << "=====Constant Threshold======" << var["amp"][i] << " " << thr << "========================" << std::endl;
-            int retCode = TimeOverThreshold( voltage, thr, startTime, time[GetTimeIndex(i)][NUM_SAMPLES-1], i, GetTimeIndex(i), var[Form("t0_%d", (int)(fabs(thr)))][i],var[Form("t1_%d", (int)(fabs(thr)))][i]);
+            int retCode = TimeOverThreshold( voltage, thr, startTime, time[GetTimeIndex(i)][NUM_SAMPLES-1], i, GetTimeIndex(i), var[Form("t0_%d", (int)(fabs(thr)))][i],var[Form("t1_%d", (int)(fabs(thr)))][i], myTimeOffset);
             if( retCode == 0 ) var[Form("tot_%d", (int)(fabs(thr)))][i] = var[Form("t1_%d", (int)(fabs(thr)))][i]-var[Form("t0_%d", (int)(fabs(thr)))][i];
           }
         }
@@ -584,7 +592,7 @@ void DatAnalyzer::Analyze(){
             //pulses are negative, so need to multiply the amplitude by -1.0
             double CFDThreshold = -1.0 * thr * var["InterpolatedAmp"][i];
             //std::cout << "===CFD====" << var["amp"][i] << " " << CFDThreshold << "========================" << std::endl;
-            int retCode = TimeOverThreshold( voltage, CFDThreshold, startTime, time[GetTimeIndex(i)][NUM_SAMPLES-1] , i, GetTimeIndex(i), var[Form("t0CFD_%d", (int)(100*thr))][i],var[Form("t1CFD_%d", (int)(100*thr))][i]);
+            int retCode = TimeOverThreshold( voltage, CFDThreshold, startTime, time[GetTimeIndex(i)][NUM_SAMPLES-1] , i, GetTimeIndex(i), var[Form("t0CFD_%d", (int)(100*thr))][i],var[Form("t1CFD_%d", (int)(100*thr))][i], myTimeOffset);
             // int retCode = TimeOverThreshold( voltage, CFDThreshold, startTime, 200 , i, GetTimeIndex(i), var[Form("t0CFD_%d", (int)(100*thr))][i],var[Form("t1CFD_%d", (int)(100*thr))][i]);
             if( retCode == 0 ) var[Form("totCFD_%d", (int)(100*thr))][i] = var[Form("t1CFD_%d", (int)(100*thr))][i]-var[Form("t0CFD_%d", (int)(100*thr))][i];
           }
@@ -778,7 +786,6 @@ void DatAnalyzer::Analyze(){
             count++;
           }
         }
-
       }
 
       c->SetGrid();
@@ -927,6 +934,7 @@ void DatAnalyzer::GetCommandLineArgs(int argc, char **argv) {
   aux.ToLower();
   if(aux == "true") verbose = true;
 
+
   aux = ParseCommandLine( argc, argv, "config" );
   if(aux == ""){
     cerr << "[ERROR]: Missing config file" << endl;
@@ -983,6 +991,10 @@ void DatAnalyzer::GetCommandLineArgs(int argc, char **argv) {
     cout << "[INFO] Number of expected events: " << flush;
     cout << N_evt_expected << endl;
   }
+
+  aux = ParseCommandLine( argc, argv, "correctForTimeOffsets" );
+  aux.ToLower();
+  if(aux == "true") correctForTimeOffsets = true;
 
   aux = ParseCommandLine( argc, argv, "save_raw" );
   aux.ToLower();
@@ -1363,7 +1375,7 @@ float DatAnalyzer::WSInterp(float t, int N, float* tn, float* cn) {
 };
 
 
-int DatAnalyzer::TimeOverThreshold(Interpolator *voltage, double tThresh, double tMin, double tMax, int ich, int t_index, float& time1, float& time2)
+int DatAnalyzer::TimeOverThreshold(Interpolator *voltage, double tThresh, double tMin, double tMax, int ich, int t_index, float& time1, float& time2, float myTimeOffset)
 {
   // 	Interpolator voltage;
   // voltage->init(NUM_SAMPLES, time[t_index][0], time[t_index][NUM_SAMPLES-1], channel[ich]);
@@ -1389,14 +1401,14 @@ int DatAnalyzer::TimeOverThreshold(Interpolator *voltage, double tThresh, double
 	}
 
 	if(nIterations == 1000) return -3;//iterations reached maximum
-	time1 = t;
+	time1 = t + myTimeOffset;
 
   /*
     std::cout << "===================================" << std::endl;
   	std::cout << "time1: " << time1 << " f(t) = " << voltage->f(time1) << std::endl;
   	std::cout << "===================================" << std::endl;
   */
-	tStep = tStepInit ; //*10.;
+	tStep = tStepInit;//*10.;
 	t += tStep;
 
 	nIterations = 0;
@@ -1420,7 +1432,7 @@ int DatAnalyzer::TimeOverThreshold(Interpolator *voltage, double tThresh, double
 	}
 
 	if(nIterations == 1000) return -6;//iterations reached maximum
-	time2 = t;
+	time2 = t + myTimeOffset;
   /*
   	std::cout << "===================================" << std::endl;
   	std::cout << "time2: " << time2 << " f(t) = " << voltage->f(time2) << std::endl;
