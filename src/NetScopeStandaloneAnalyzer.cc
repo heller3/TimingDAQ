@@ -1,5 +1,4 @@
 #include "NetScopeStandaloneAnalyzer.hh"
-#define BUFSIZE 8192
 
 using namespace std;
 
@@ -21,14 +20,48 @@ void NetScopeStandaloneAnalyzer::GetCommandLineArgs(int argc, char **argv){
 
 }
 
+std::string NetScopeStandaloneAnalyzer::split(const std::string& half, const std::string& s, const std::string& h) const
+{
+    if(s.find(h) != std::string::npos)
+    {
+        std::string token;
+        if      ("first"==half) token = s.substr(0, s.find(h));
+        else if ("last" ==half) token = s.substr(s.find(h) + h.length(), std::string::npos);
+        return token;
+    }
+    else
+    {
+        return s;
+    }
+}
+
+void NetScopeStandaloneAnalyzer::GetDim(TTree* const tree, const std::string& var, unsigned int& f, unsigned int& s)
+{
+    TBranch* branch = tree->GetBranch(var.c_str());
+    TObjArray *lol = branch->GetListOfLeaves();
+    TLeaf *leaf = (TLeaf*)lol->UncheckedAt(0);
+    std::string title = leaf->GetTitle();
+    std::string firstdim  = split("last", split("first", title, "]"), "[");
+    std::string seconddim = split("first", split("last", title, "]["), "]");
+    f = static_cast<unsigned int>(std::atoi(firstdim.c_str()));
+    s = static_cast<unsigned int>(std::atoi(seconddim.c_str()));
+}
 
 void NetScopeStandaloneAnalyzer::InitLoop(){
+  cout<<"Define numChannels, numTime, and numSamples from input TTree"<<endl;
+  unsigned int numChannels, numTime, numSamples;
+  GetDim(tree_in, "channel", numChannels, numSamples);
+  GetDim(tree_in, "time", numTime, numSamples);
+  setNumChannels(numChannels);
+  setNumTimes(numTime);
+  setNumSamples(numSamples);
+  for(unsigned int i = 0; i < numChannels; i++){active_ch.emplace_back(i);}
+
   DatAnalyzer::InitLoop();
-  cout<<"finished datanalyzer InitLoop"<<endl;
+  cout<<"Finished datanalyzer InitLoop"<<endl;
   tree_in->SetBranchAddress("i_evt", &i_evt);
   tree_in->SetBranchAddress("channel", &(channel[0][0]));
   tree_in->SetBranchAddress("time", &(time[0][0]));
-
 
   cout<<"Trying to open pixel file"<<endl;
   if(pixel_input_file_path != ""){
@@ -64,8 +97,6 @@ void NetScopeStandaloneAnalyzer::InitLoop(){
       pixel_tree->GetEntry( idx_px_tree );
     }
   }
-
-
 }
 
 // Fill tc, raw, time and amplitude
@@ -88,7 +119,6 @@ Include telescope data, then call main analyzer DatAnalyzer::Analyze()
 **************************************************
 */
 void NetScopeStandaloneAnalyzer::Analyze(){
-	//cout<<"i_evt "<<i_evt<<endl;
   if(pixel_input_file_path != ""){
     xIntercept = -999;
     yIntercept = -999;

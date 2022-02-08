@@ -1,14 +1,10 @@
 #ifndef NetScopeStandaloneAnalyzer_HH
 #define NetScopeStandaloneAnalyzer_HH
-#define NetScope_CHANNELS 8
-#define NetScope_TIMES 1
-#define NetScope_SAMPLES 2002//502//2000 //1000
-#define NetScope_F_SAMPLES 0
-#define SCOPE_MEM_LENGTH_MAX 12500000
  
 #include "DatAnalyzer.hh"
 #include <assert.h>
-
+#include "TLeaf.h"
+#include "TObjArray.h"
 
 // This is the class that should be used for parsing and analyzing
 // NetScope data files in .root format produced by the python script.
@@ -24,15 +20,19 @@ class NetScopeStandaloneAnalyzer : public DatAnalyzer {
 	      int trigger;
 	      int runNumber;
 	      int nPlanes;
-          int numPixels;
-          int numBackPlanes;
+              int numPixels;
+              int numBackPlanes;
 	      Long64_t timestamp;
 	  };
 
     //Scope Tektronix DPO7254 ADC already in account in the binary conversion
-    NetScopeStandaloneAnalyzer() : DatAnalyzer(NetScope_CHANNELS, NetScope_TIMES, NetScope_SAMPLES, 1, 1., NetScope_F_SAMPLES) {}
+    NetScopeStandaloneAnalyzer() : DatAnalyzer(999, 999, 999, 1, 1., 0) {}
 
     void GetCommandLineArgs(int argc, char **argv);
+
+    std::string split(const std::string& half, const std::string& s, const std::string& h) const;
+
+    void GetDim(TTree* const tree, const std::string& var, unsigned int& f, unsigned int& s);
 
     void InitLoop();
 
@@ -43,7 +43,7 @@ class NetScopeStandaloneAnalyzer : public DatAnalyzer {
     void Analyze();
     
   protected:
-    vector<int> active_ch = {0,1,2,3,4,5,6,7};
+    vector<int> active_ch;
     // Set by command line arguments or default
     TString pixel_input_file_path;
 
