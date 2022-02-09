@@ -19,11 +19,25 @@ class NetScopeStandaloneAnalyzer : public DatAnalyzer {
               double chi2;
               double xResidBack;
 	      double yResidBack;
+              double xErrDUT;
+              double yErrDUT;
+              double xErr60;
+              double yErr60;
+              double xErr61;
+              double yErr61;
+              double xResid60;
+              double yResid60;
+              double xResid61;
+              double yResid61;
 	      int trigger;
 	      int runNumber;
 	      int nPlanes;
               int numPixels;
               int numBackPlanes;
+              int numTracks;
+              int numClustersPix;
+              int numClustersStripsOdd;
+              int numClustersStripsEven;
 	      Long64_t timestamp;
 	      Long64_t bco;
 	  };
@@ -67,10 +81,21 @@ class NetScopeStandaloneAnalyzer : public DatAnalyzer {
     float chi2=0;
     float xResidBack=0;
     float yResidBack=0;
+    float xErrDUT=0;
+    float yErrDUT=0;
+    float yErr60=0;
+    float xErr61=0;
+    float yResid60=0;
+    float xResid61=0;
     int ntracks=0;
+    int ntracks_alt=0;
     int nplanes=0;
     int npix=0;
     int nback=0;
+    int nClustersPix=0;
+    int nClustersStripsX=0;
+    int nClustersStripsY=0;
+
 };
 
 #endif
