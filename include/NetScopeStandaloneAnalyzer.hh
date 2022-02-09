@@ -1,14 +1,10 @@
 #ifndef NetScopeStandaloneAnalyzer_HH
 #define NetScopeStandaloneAnalyzer_HH
-#define NetScope_CHANNELS 8
-#define NetScope_TIMES 1
-#define NetScope_SAMPLES 502
-#define NetScope_F_SAMPLES 0
-#define SCOPE_MEM_LENGTH_MAX 12500000
  
 #include "DatAnalyzer.hh"
 #include <assert.h>
-
+#include "TLeaf.h"
+#include "TObjArray.h"
 
 // This is the class that should be used for parsing and analyzing
 // NetScope data files in .root format produced by the python script.
@@ -20,22 +16,40 @@ class NetScopeStandaloneAnalyzer : public DatAnalyzer {
 	      double ySlope;
 	      double xIntercept;
 	      double yIntercept;
-          double chi2;
-          double xResidBack;
+              double chi2;
+              double xResidBack;
 	      double yResidBack;
+              double xErrDUT;
+              double yErrDUT;
+              double xErr60;
+              double yErr60;
+              double xErr61;
+              double yErr61;
+              double xResid60;
+              double yResid60;
+              double xResid61;
+              double yResid61;
 	      int trigger;
 	      int runNumber;
 	      int nPlanes;
-          int numPixels;
-          int numBackPlanes;
-          Long64_t timestamp;
+              int numPixels;
+              int numBackPlanes;
+              int numTracks;
+              int numClustersPix;
+              int numClustersStripsOdd;
+              int numClustersStripsEven;
+	      Long64_t timestamp;
 	      Long64_t bco;
 	  };
 
     //Scope Tektronix DPO7254 ADC already in account in the binary conversion
-    NetScopeStandaloneAnalyzer() : DatAnalyzer(NetScope_CHANNELS, NetScope_TIMES, NetScope_SAMPLES, 1, 1., NetScope_F_SAMPLES) {}
+    NetScopeStandaloneAnalyzer() : DatAnalyzer(999, 999, 999, 1, 1., 0) {}
 
     void GetCommandLineArgs(int argc, char **argv);
+
+    std::string split(const std::string& half, const std::string& s, const std::string& h) const;
+
+    void GetDim(TTree* const tree, const std::string& var, unsigned int& f, unsigned int& s);
 
     void InitLoop();
 
@@ -46,7 +60,7 @@ class NetScopeStandaloneAnalyzer : public DatAnalyzer {
     void Analyze();
     
   protected:
-    vector<int> active_ch = {0,1,2,3};
+    vector<int> active_ch;
     // Set by command line arguments or default
     TString pixel_input_file_path;
     bool skip_tracks;
@@ -67,10 +81,21 @@ class NetScopeStandaloneAnalyzer : public DatAnalyzer {
     float chi2=0;
     float xResidBack=0;
     float yResidBack=0;
+    float xErrDUT=0;
+    float yErrDUT=0;
+    float yErr60=0;
+    float xErr61=0;
+    float yResid60=0;
+    float xResid61=0;
     int ntracks=0;
+    int ntracks_alt=0;
     int nplanes=0;
     int npix=0;
     int nback=0;
+    int nClustersPix=0;
+    int nClustersStripsX=0;
+    int nClustersStripsY=0;
+
 };
 
 #endif

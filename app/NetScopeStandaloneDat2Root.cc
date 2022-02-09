@@ -13,12 +13,11 @@ using namespace std;
 int main(int argc, char **argv) {
   gROOT->SetBatch();
 
-  NetScopeStandaloneAnalyzer* analyzer = new NetScopeStandaloneAnalyzer();
-  analyzer->GetCommandLineArgs(argc, argv);
-  analyzer->RunEventsLoop();
-
-  //patch for some lost memory situation
-  assert(false);
-
+  NetScopeStandaloneAnalyzer analyzer;
+  analyzer.GetCommandLineArgs(argc, argv);
+  analyzer.InitOutput();
+  analyzer.InitLoop();
+  analyzer.RunEventsLoop();
+  
   return 0;
 }
