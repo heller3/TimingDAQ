@@ -45,21 +45,15 @@ void DatAnalyzer::Analyze(){
     float scale_factor = (1000.0 * DAC_SCALE / (float)DAC_RESOLUTION) * config->getChannelMultiplicationFactor(i);
     
     // ------- Get baseline ------
-    float baseline = 0;
-    float bl_start_time = config->channels[i].baseline_time[0];
-    unsigned int bl_st_idx = -1;
-    float bl_stop_time = config->channels[i].baseline_time[1];
+    unsigned int bl_st_idx = static_cast<unsigned int>((config->channels[i].baseline_time[0])*NUM_SAMPLES);
+    unsigned int bl_en_idx = static_cast<unsigned int>((config->channels[i].baseline_time[1])*NUM_SAMPLES);
+    unsigned int bl_length = bl_en_idx - bl_st_idx;
 
-    unsigned int j = 0;
-    while (time[GetTimeIndex(i)][j] < bl_stop_time)
-    {
-      if (time[GetTimeIndex(i)][j] > bl_start_time) {
-        if (bl_st_idx == -1) bl_st_idx = j;
+    float baseline = 0;
+    for(unsigned int j = bl_st_idx; j < bl_en_idx; j++) {
         baseline += channel[i][j];
-      }
-      j++;
     }
-    unsigned int bl_length = j - bl_st_idx;
+    
     if(bl_length <=1) cout << "WARNING: Baseline window is trivially short, probably configured incorrectly"<<endl;
     baseline /= (float) bl_length;
     TF1* f = nullptr;
