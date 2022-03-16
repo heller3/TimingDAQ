@@ -11,36 +11,37 @@
 
 class NetScopeStandaloneAnalyzer : public DatAnalyzer {
   public:
-	  struct FTBFPixelEvent {
-	      double xSlope;
-	      double ySlope;
-	      double xIntercept;
-	      double yIntercept;
-              double chi2;
-              double xResidBack;
-	      double yResidBack;
-              double xErrDUT;
-              double yErrDUT;
-              double xErr60;
-              double yErr60;
-              double xErr61;
-              double yErr61;
-              double xResid60;
-              double yResid60;
-              double xResid61;
-              double yResid61;
-	      int trigger;
-	      int runNumber;
-	      int nPlanes;
-              int numPixels;
-              int numBackPlanes;
-              int numTracks;
-              int numClustersPix;
-              int numClustersStripsOdd;
-              int numClustersStripsEven;
-	      Long64_t timestamp;
-	      Long64_t bco;
-	  };
+    struct FTBFPixelEvent {
+        double xSlope;
+        double ySlope;
+        double xIntercept;
+        double yIntercept;
+        double chi2;
+        double xResidBack;
+        double yResidBack;
+        double xErrDUT;
+        double yErrDUT;
+        double xErr60;
+        double yErr60;
+        double xErr61;
+        double yErr61;
+        double xResid60;
+        double yResid60;
+        double xResid61;
+        double yResid61;
+        int trigger;
+        int runNumber;
+        int nPlanes;
+        int numPixels;
+        int numBackPlanes;
+        int numTracks;
+        int numClustersPix;
+        int numClustersStripsOdd;
+        int numClustersStripsEven;
+        int numStripsWith2Clusters;
+        Long64_t timestamp;
+        Long64_t bco;
+    };
 
     //Scope Tektronix DPO7254 ADC already in account in the binary conversion
     NetScopeStandaloneAnalyzer() : DatAnalyzer(999, 999, 999, 1, 1., 0) {}
@@ -95,6 +96,7 @@ class NetScopeStandaloneAnalyzer : public DatAnalyzer {
     int nClustersPix=0;
     int nClustersStripsX=0;
     int nClustersStripsY=0;
+    int nStripsWith2Clusters=0;
 
 };
 

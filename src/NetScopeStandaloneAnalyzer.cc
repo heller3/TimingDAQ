@@ -110,6 +110,7 @@ void NetScopeStandaloneAnalyzer::InitLoop(){
     tree->Branch("nClustersPix", &nClustersPix, "nClustersPix/I");
     tree->Branch("nClustersStripsX", &nClustersStripsX, "nClustersStripsX/I");
     tree->Branch("nClustersStripsY", &nClustersStripsY, "nClustersStripsY/I");
+    tree->Branch("nStripsWith2Clusters", &nStripsWith2Clusters, "nStripsWith2Clusters/I");
     if (verbose) { cout << "   -->All pixel variables" << endl; }
     cout<<"Trying to get first entry"<<endl;
     pixel_tree->GetEntry(0);
@@ -169,6 +170,7 @@ void NetScopeStandaloneAnalyzer::Analyze(){
     nClustersPix=0;
     nClustersStripsY=0;
     nClustersStripsX=0;
+    nStripsWith2Clusters=0;
 
     while (idx_px_tree < entries_px_tree && i_evt >= (pixel_event->trigger+0)) {
       pixel_tree->GetEntry(idx_px_tree);
@@ -198,6 +200,7 @@ void NetScopeStandaloneAnalyzer::Analyze(){
           nClustersPix=pixel_event->numClustersPix;
           nClustersStripsX=pixel_event->numClustersStripsOdd;
           nClustersStripsY=pixel_event->numClustersStripsEven;
+          nStripsWith2Clusters=pixel_event->numStripsWith2Clusters;
         }
       	ntracks++;
         idx_px_tree++;
