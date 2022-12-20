@@ -15,6 +15,8 @@ int main(int argc, char **argv) {
 
   VMEAnalyzer* analyzer = new VMEAnalyzer();
   analyzer->GetCommandLineArgs(argc, argv);
+  analyzer->InitOutput();
+  analyzer->InitLoop();
   analyzer->LoadCalibration();
   analyzer->RunEventsLoop();
 

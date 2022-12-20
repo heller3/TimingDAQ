@@ -19,7 +19,7 @@ class NetScopeStandaloneAnalyzer : public DatAnalyzer {
         double chi2;
         double xResidBack;
         double yResidBack;
-         double xErrDUT;
+        double xErrDUT;
         double yErrDUT;
         double xErr04;
         double yErr04;
@@ -88,10 +88,10 @@ class NetScopeStandaloneAnalyzer : public DatAnalyzer {
     float yResidBack=0;
     float xErrDUT=0;
     float yErrDUT=0;
-    float yErr60=0;
-    float xErr61=0;
-    float yResid60=0;
-    float xResid61=0;
+    float yErr04=0;
+    float xErr05=0;
+    float yResid04=0;
+    float xResid05=0;
     int ntracks=0;
     int ntracks_alt=0;
     int nplanes=0;
@@ -101,7 +101,6 @@ class NetScopeStandaloneAnalyzer : public DatAnalyzer {
     int nClustersStripsX=0;
     int nClustersStripsY=0;
     int nStripsWith2Clusters=0;
-
 };
 
 #endif
