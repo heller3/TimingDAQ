@@ -1,6 +1,9 @@
 #ifndef DatAnalyzer_HH
 #define DatAnalyzer_HH
 
+#ifndef _WIN32
+#include <unistd.h>
+#endif
 // STD INCLUDES
 #include <iostream>
 #include <string>
