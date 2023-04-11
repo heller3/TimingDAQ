@@ -60,7 +60,8 @@ class NetScopeStandaloneAnalyzer : public DatAnalyzer {
 
     int GetChannelsMeasurement(int i_aux);
 
-    unsigned int GetTimeIndex(unsigned int n_ch) { return 0; }
+    unsigned int GetTimeIndex(unsigned int n_ch) { return n_ch / (NUM_CHANNELS / NUM_TIMES) ; }
+    // unsigned int GetTimeIndex(unsigned int n_ch) { return n_ch; }
 
     void Analyze();
     
