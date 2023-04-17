@@ -4,8 +4,8 @@ INC = $(shell pwd)
 
 LDFLAGS := $(shell root-config --glibs)
 CPPFLAGS := $(shell root-config --cflags) -I$(INC)/include
-CPPFLAGS += -g -std=c++14
-#CPPFLAGS += -g
+#CPPFLAGS += -g -std=c++14
+CPPFLAGS += -g
 #CPPFLAGS += -g -fsanitize=address -Wall -Wextra -Wno-sign-compare
 
 ifeq ($(shell uname), Darwin)
