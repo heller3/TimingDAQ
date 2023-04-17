@@ -131,6 +131,7 @@ class DatAnalyzer {
         float** channel_spectrum;
         float* frequency;
         float* timeOffset;
+        uint* trigger_cell;
 
         // Output tree vars
         unsigned int i_evt = 0;

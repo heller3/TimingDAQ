@@ -1055,6 +1055,7 @@ void DatAnalyzer::InitLoop() {
     time    = new float*[NUM_TIMES];
     channel = new float*[NUM_CHANNELS];
     timeOffset = new float[NUM_CHANNELS];
+    trigger_cell = new uint[NUM_CHANNELS];
 
     if ( NUM_F_SAMPLES > 0 )
     {
