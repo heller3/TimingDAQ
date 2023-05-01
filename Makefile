@@ -15,6 +15,11 @@ endif
 TARGETS = VMEDat2Root DRSDat2Root DRSclDat2Root NetScopeDat2Root NetScopeStandaloneDat2Root ETL_ASIC_Dat2Root DT5742Dat2Root
 SRC = src/Configuration.cc src/Interpolator.cc src/DatAnalyzer.cc 
 
+
+$(info $$CXX is  [${CXX}])
+$(info $$LD is  [${LD}])
+$(info $$INC is  [${INC}])
+
 all : $(TARGETS)
 
 $(TARGETS) : %Dat2Root : $(SRC:.cc=.o) src/%Analyzer.o app/%Dat2Root.cc

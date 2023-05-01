@@ -1,6 +1,9 @@
 #ifndef DatAnalyzer_HH
 #define DatAnalyzer_HH
 
+#ifndef _WIN32
+#include <unistd.h>
+#endif
 // STD INCLUDES
 #include <iostream>
 #include <string>
@@ -128,6 +131,7 @@ class DatAnalyzer {
         float** channel_spectrum;
         float* frequency;
         float* timeOffset;
+        uint* trigger_cell;
 
         // Output tree vars
         unsigned int i_evt = 0;

@@ -72,8 +72,10 @@ void NetScopeStandaloneAnalyzer::InitLoop(){
   tree_in->SetBranchAddress("channel", &(channel[0][0]));
   tree_in->SetBranchAddress("time", &(time[0][0]));
   tree_in->SetBranchAddress("timeoffsets", &(timeOffset[0]));
+  tree_in->SetBranchAddress("trigger_cell", &(trigger_cell[0]));
 
   tree->Branch("timeoffsets", &(timeOffset[0]), Form("timeoffsets[%d]/F", NUM_CHANNELS));
+  tree->Branch("trigger_cell", &(trigger_cell[0]), Form("trigger_cell[%d]/i", NUM_CHANNELS));
 
   cout<<"Trying to open pixel file"<<endl;
   if(!skip_tracks && pixel_input_file_path != ""){
