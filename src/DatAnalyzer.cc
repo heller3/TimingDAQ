@@ -168,6 +168,92 @@ void DatAnalyzer::Analyze(){
     // fittable *= fabs(channel[i][idx_min+3]) > 2*baseline_RMS;
     // fittable *= fabs(channel[i][idx_min-3]) > 2*baseline_RMS;
     
+//// Do sine fit for RF signals even if not deemed "fittable"
+      if( config->channels[i].algorithm.Contains("sine") ) {
+        bool do_delta = false;
+        unsigned int i_min = 2;
+        unsigned int i_half = NUM_SAMPLES/2;
+        unsigned int i_max = NUM_SAMPLES - 2;
+        float t_min = time[GetTimeIndex(i)][i_min];
+        float t_max = time[GetTimeIndex(i)][i_max];
+        float t_half = time[GetTimeIndex(i)][i_half];
+
+
+
+        TF1* fsine = new TF1("fsine"+name, "[0]+[1]*sin([2]+[3]*x)", t_min, t_max);
+      //         f = new TF1("f_bl", "[0]+[1]*sin([2]+[3]*x)");
+        fsine->SetParameter(0, var["baseline"][i]);
+        // fsine->SetParLimits(1,-200,200);
+        fsine->SetParameter(1, 350);
+        fsine->SetParLimits(1,200,1000);
+        fsine->SetParameter(2, 0);
+        fsine->SetParLimits(2,-3.15,3.15);
+        fsine->SetParameter(3, 6.283* 2.250e7 ); //2pi * 22.5 MHz, for crocker
+        fsine->SetParLimits(3,6.283* 1e7,6.283* 3.5e7 );
+        fsine->SetParNames("const", "A", "phi0", "omega");
+        // fsine->SetLineColor(2);
+        TF1 * fsine_firsthalf;
+        TF1 *fsine_secondhalf;
+        if (do_delta){
+        fsine_firsthalf = new TF1("fsine_firsthalf"+name, "[0]+[1]*sin([2]+[3]*x)", t_min, t_half-0.5e-9);
+      //         f = new TF1("f_bl", "[0]+[1]*sin([2]+[3]*x)");
+        fsine_firsthalf->SetParameter(0, var["baseline"][i]);
+        // fsine_firsthalf->SetParLimits(1,-200,200);
+        fsine_firsthalf->SetParameter(1, 350);
+        fsine_firsthalf->SetParLimits(1,200,1000);
+        fsine_firsthalf->SetParameter(2, 0);
+        fsine_firsthalf->SetParLimits(2,-3.15,3.15);
+        fsine_firsthalf->SetParameter(3, 6.283* 2.250e7 ); //2pi * 22.5 MHz, for crocker
+        fsine_firsthalf->SetParLimits(3,6.283* 1e7,6.283* 3.5e7 );
+        fsine_firsthalf->SetParNames("const", "A", "phi0", "omega");
+        fsine_firsthalf->SetLineColor(kBlue+2);
+        fsine_secondhalf = new TF1("fsine_secondhalf"+name, "[0]+[1]*sin([2]+[3]*x)", t_half+0.5e-9, t_max);
+      //         f = new TF1("f_bl", "[0]+[1]*sin([2]+[3]*x)");
+        fsine_secondhalf->SetParameter(0, var["baseline"][i]);
+        // fsine_secondhalf->SetParLimits(1,-200,200);
+        fsine_secondhalf->SetParameter(1, 350);
+        fsine_secondhalf->SetParLimits(1,200,1000);
+        fsine_secondhalf->SetParameter(2, 0);
+        fsine_secondhalf->SetParLimits(2,-3.15,3.15);
+        fsine_secondhalf->SetParameter(3, 6.283* 2.250e7 ); //2pi * 22.5 MHz, for crocker
+        fsine_secondhalf->SetParLimits(3,6.283* 1e7,6.283* 3.5e7 );
+        fsine_secondhalf->SetParNames("const", "A", "phi0", "omega");
+        fsine_secondhalf->SetLineColor(kGreen+2);
+
+        }
+        TString opt = "R";
+        if ( draw_debug_pulses ) opt += "+";
+        else opt += "QN0";
+        pulse->Fit("fsine"+name, opt);
+
+        var["sine_freq"][i] = fsine->GetParameter(3);
+        var["sine_offset"][i] = fsine->GetParameter(2);
+        var["sine_amplitude"][i] = fsine->GetParameter(1);
+        var["sine_baseline"][i] = fsine->GetParameter(0);
+        var["sine_zero_time"][i] = -var["sine_offset"][i] / var["sine_freq"][i];
+        var["sine_chi2"][i] = fsine->GetChisquare();
+        
+        if (do_delta){
+        pulse->Fit("fsine_firsthalf"+name, opt);
+        pulse->Fit("fsine_secondhalf"+name, opt);
+        
+        var["sine_delta"][i] = fsine_secondhalf->GetParameter(2) / fsine_secondhalf->GetParameter(3) - fsine_firsthalf->GetParameter(2) / fsine_firsthalf->GetParameter(3);
+        delete fsine_secondhalf;
+        delete fsine_firsthalf;
+        }
+        // cout<<Form("Baseline: %.2f",var["baseline"][i])<<endl;
+        // cout<<Form("Amp: %.2f",var["amp"][i])<<endl;
+        // cout<<Form("Sine parameters:")<<endl;
+        // cout<<Form("f->SetParameter(0,%.3f);",fsine->GetParameter(0))<<endl;
+        // cout<<Form("f->SetParameter(1,%.3f);",fsine->GetParameter(1))<<endl;
+        // cout<<Form("f->SetParameter(2,%.3f);",fsine->GetParameter(2))<<endl;
+        // cout<<Form("f->SetParameter(3,%.3f);",fsine->GetParameter(3))<<endl;
+        delete fsine;
+
+      }
+
+
+
     //-------------------------------------------------------------
     //If pulse is still possitive change it automatically
     //No sure this is a good idea (CP)
@@ -289,6 +375,8 @@ void DatAnalyzer::Analyze(){
 
         delete flinear;
       }
+
+      
       /*************************************
       // -------------- Local polinomial fit
       **************************************/
@@ -598,7 +686,7 @@ void DatAnalyzer::Analyze(){
     // ===================  Draw plot of the pulse
     **********************************************/
     if(draw_debug_pulses) {
-
+      bool simple_mode =true;
       cout << "========= Event: " << i_evt << " - ch: " << i << endl;
 
       TCanvas* c =  new TCanvas("c_"+name, "c_"+name, 1600, 600);
@@ -615,6 +703,7 @@ void DatAnalyzer::Analyze(){
       pulse->GetYaxis()->SetTitle("Amplitude [mV]");
       pulse->GetXaxis()->SetTitle("Time [ns]");
       pulse->Draw("APE1");
+      if (!simple_mode){
       // Draw baseline
       line->SetLineWidth(1);
       line->SetLineColor(46);
@@ -758,6 +847,7 @@ void DatAnalyzer::Analyze(){
 
             count++;
           }
+        
         }
 
         for( unsigned int kk = 0; kk < config->constant_threshold.size(); kk++) {
@@ -780,6 +870,7 @@ void DatAnalyzer::Analyze(){
             count++;
           }
         }
+      }
       }
 
       c->SetGrid();
@@ -1116,6 +1207,7 @@ void DatAnalyzer::InitLoop() {
     bool at_least_1_FL = false;
     bool at_least_1_SPL = false;
     bool at_least_1_TOT = false;
+    bool at_least_1_sine = false;
     for(auto c : config->channels) {
       if( c.second.algorithm.Contains("G")) at_least_1_gaus_fit = true;
       if( c.second.algorithm.Contains("Re")) at_least_1_rising_edge = true;
@@ -1126,6 +1218,7 @@ void DatAnalyzer::InitLoop() {
       if( c.second.algorithm.Contains("FL")) at_least_1_FL = true;
       if( c.second.algorithm.Contains("SPL")) at_least_1_SPL = true;
       if( c.second.algorithm.Contains("TOT")) at_least_1_TOT = true;
+      if( c.second.algorithm.Contains("sine")) at_least_1_sine = true;
     }
 
     /*
@@ -1213,7 +1306,16 @@ void DatAnalyzer::InitLoop() {
         var_names.push_back(Form("totCFD_%d", (int)(100*fabs(thr))));
       }
     }
-
+    if (at_least_1_sine){
+      cout<<"Adding sine branches"<<endl;
+      var_names.push_back(Form("sine_freq"));
+      var_names.push_back(Form("sine_offset"));
+      var_names.push_back(Form("sine_amplitude"));
+      var_names.push_back(Form("sine_baseline"));
+      var_names.push_back(Form("sine_zero_time"));
+      var_names.push_back(Form("sine_chi2"));
+      var_names.push_back(Form("sine_delta"));
+    }
     /*
     *******************************************************
     // Create the tree beanches an the associated variables

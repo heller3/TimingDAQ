@@ -14,6 +14,8 @@ int main(int argc, char **argv) {
 
   DRSAnalyzer* analyzer = new DRSAnalyzer();
   analyzer->GetCommandLineArgs(argc, argv);
+  analyzer->InitOutput();
+  analyzer->InitLoop();
   analyzer->RunEventsLoop();
 
   return 0;
