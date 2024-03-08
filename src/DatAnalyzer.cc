@@ -168,7 +168,19 @@ void DatAnalyzer::Analyze(){
     // fittable *= fabs(channel[i][idx_min+3]) > 2*baseline_RMS;
     // fittable *= fabs(channel[i][idx_min-3]) > 2*baseline_RMS;
     
-//// Do sine fit for RF signals even if not deemed "fittable"
+
+      if( config->channels[i].algorithm.Contains("first_cross")){
+        int index_first_cross_50 = GetIdxFirstCross(-50, channel[i], 0, +1);
+        
+       
+        float t_50 = time[GetTimeIndex(i)][index_first_cross_50];
+        int index_first_cross_20 = GetIdxFirstCross(-20, channel[i], 0, +1);
+        float t_20 = time[GetTimeIndex(i)][index_first_cross_20];
+        var["first_50mV"][i] = t_50;
+        var["first_20mV"][i] = t_20;
+      }
+      //// Do sine fit for RF signals even if not deemed "fittable"
+
       if( config->channels[i].algorithm.Contains("sine") ) {
         bool do_delta = false;
         unsigned int i_min = 2;
@@ -1208,6 +1220,8 @@ void DatAnalyzer::InitLoop() {
     bool at_least_1_SPL = false;
     bool at_least_1_TOT = false;
     bool at_least_1_sine = false;
+    bool at_least_1_first_cross = false;
+  
     for(auto c : config->channels) {
       if( c.second.algorithm.Contains("G")) at_least_1_gaus_fit = true;
       if( c.second.algorithm.Contains("Re")) at_least_1_rising_edge = true;
@@ -1219,6 +1233,7 @@ void DatAnalyzer::InitLoop() {
       if( c.second.algorithm.Contains("SPL")) at_least_1_SPL = true;
       if( c.second.algorithm.Contains("TOT")) at_least_1_TOT = true;
       if( c.second.algorithm.Contains("sine")) at_least_1_sine = true;
+      if( c.second.algorithm.Contains("first_cross")) at_least_1_first_cross = true;
     }
 
     /*
@@ -1315,6 +1330,10 @@ void DatAnalyzer::InitLoop() {
       var_names.push_back(Form("sine_zero_time"));
       var_names.push_back(Form("sine_chi2"));
       var_names.push_back(Form("sine_delta"));
+    }
+    if (at_least_1_first_cross){
+      var_names.push_back(Form("first_50mV"));
+      var_names.push_back(Form("first_20mV"));
     }
     /*
     *******************************************************
