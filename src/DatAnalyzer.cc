@@ -159,7 +159,7 @@ void DatAnalyzer::Analyze(){
     vector<pair<int, int>> poly_bounds;
     float Re_b, Re_slope;
     bool fittable = true;
-    fittable *= idx_min < (int)(NUM_SAMPLES*0.8);
+    if (!config->channels[i].algorithm.Contains("trig")) fittable *= idx_min < (int)(NUM_SAMPLES*0.8);
     fittable *= fabs(amp) > 8 * baseline_RMS;
     fittable *= fabs(channel[i][idx_min+1]) > 4*baseline_RMS;
     fittable *= fabs(channel[i][idx_min-1]) > 4*baseline_RMS;
